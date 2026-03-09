@@ -329,10 +329,7 @@ class BoundaryEdgeLengthOptimizer:
                 continue
 
             try:
-                closest_vertex = min(
-                    relaxer.boundary_vertices, 
-                    key=lambda v: mesh.vertex_point(v).distance_to_point(corner)
-                )
+                closest_vertex = min(relaxer.boundary_vertices, key=lambda v: mesh.vertex_point(v).distance_to_point(corner))
                 corner_vertices.add(closest_vertex)
             except (ValueError, TypeError):
                 pass
@@ -343,7 +340,7 @@ class BoundaryEdgeLengthOptimizer:
         p = mesh.vertex_point(vertex)
         best_dist = float("inf")
         best_tangent = None
-        
+
         for i in range(len(pts) - 1):
             a = pts[i]
             b = pts[i + 1]
@@ -351,18 +348,18 @@ class BoundaryEdgeLengthOptimizer:
             denom = ab.dot(ab)
             if denom == 0:
                 continue
-            
+
             ap = Vector.from_start_end(a, p)
             t = ap.dot(ab) / denom
             t = max(0, min(1, t))
-            
+
             closest = Point(a.x + ab.x * t, a.y + ab.y * t, a.z + ab.z * t)
             d = p.distance_to_point(closest)
-            
+
             if d < best_dist:
                 best_dist = d
                 best_tangent = ab.unitized()
-                    
+
         if best_tangent is None:
             return Vector(1, 0, 0)
         return best_tangent
@@ -379,20 +376,20 @@ class BoundaryEdgeLengthOptimizer:
         for v in relaxer.boundary_vertices:
             if v in corner_vertices:
                 continue
-                
+
             force = mesh.vertex_attribute(v, "force") or Vector(0, 0, 0)
             tangent = self._get_boundary_tangent(v, relaxer, mesh)
 
             for nb in mesh.vertex_neighbors(v):
                 if nb not in relaxer.boundary_vertices:
                     continue
-                    
+
                 edge_vector = mesh.edge_vector((v, nb))
                 edge_length = edge_vector.length
                 length_diff = edge_length - target
-                
+
                 spring_force = edge_vector.unitized() * (self.K * length_diff)
-                
+
                 # project spring force onto the local boundary tangent
                 spring_force_proj = tangent * spring_force.dot(tangent)
                 force += spring_force_proj
