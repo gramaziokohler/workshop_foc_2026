@@ -77,7 +77,7 @@ Participants gain practical understanding of COMPAS Timber design, AI integratio
 ## Team
 
 ### Andrea Settimi
-<img src="./images/team-andrea.jpg" width="100" style="border-radius: 50%;" />
+<img src="./images/team-andrea.jpg" width="100" />
 
 Software developer in the Timber Construction Development department at Cadwork Informatik, leading AI development and integration for timber construction workflows. PhD graduate from EPFL’s Chair of Timber Construction (IBOIS), specializing in computer vision and digital fabrication. Contributor to open-source tools for computational design, extended reality, and fabrication, with hands-on background in timber projects as both planner and builder.
 
@@ -85,7 +85,7 @@ Software developer in the Timber Construction Development department at Cadwork 
 * **LinkedIn**: [Profile](https://www.linkedin.com/in/andrea-settimi-57a411114/)
 
 ### Panayiotis Papacharalambous
-<img src="./images/team-panos.jpg" width="100" style="border-radius: 50%;" />
+<img src="./images/team-panos.jpg" width="100" />
 
 Architect and computational designer contributing to open-source software for timber construction. Develops tools and digital pipelines within the COMPAS ecosystem to support research and applied practice in the timber sector. Brings hands-on experience with robotic and machine-based fabrication to the design of fabrication-aware workflows. Holds a Diploma of Architect Engineer from the Aristotle University of Thessaloniki and an MAS in Architecture and Digital Fabrication from ETH Zürich.
 
@@ -93,7 +93,7 @@ Architect and computational designer contributing to open-source software for ti
 * **LinkedIn**: [Profile](https://www.linkedin.com/in/panayiotis-papacharalambous-1907911b8/)
 
 ### Gonzalo Casas
-<img src="./images/team-gonzalo.png" width="100" style="border-radius: 50%;" />
+<img src="./images/team-gonzalo.png" width="100" />
 
 Software engineer and open-source contributor specializing in digital fabrication and computational design. Lecturer of “Coding Architecture I–II” and core developer of the COMPAS framework. Over a decade of teaching and workshop experience, including work within NCCR Digital Fabrication, focusing on software workflows for architecture and fabrication.
 
@@ -101,7 +101,7 @@ Software engineer and open-source contributor specializing in digital fabricatio
 * **LinkedIn**: [Profile](https://linkedin.com/in/gonzalocasas)
 
 ### Chen Kasirer
-<img src="./images/team-chen.png" width="100" style="border-radius: 50%;" />
+<img src="./images/team-chen.png" width="100" />
 
 Software engineer developing open-source tools for AEC and core developer of the COMPAS Framework. Focused on bridging research and industry through thoughtful software design. Experienced in software architecture, digital fabrication, and applied engineering. Previously worked in automotive cybersecurity, virtualization consulting, and IT engineering. Holds a BSc in Computer Science from Ulm University with specialization in both computer graphics & vision and computer engineering.
 
