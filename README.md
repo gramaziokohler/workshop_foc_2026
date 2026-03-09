@@ -15,6 +15,21 @@ Participants will design using COMPAS Timber, transfer models into Cadwork for p
 
 This speculative pipeline demonstrates a possible future where open-source tools and industry software become truly interoperable. The workshop reveals current potentials, advantages, and bottlenecks, offering participants a tangible preview of how bleeding-edge technologies could transform timber construction pipelines as academia and industry converge.
 
+## Getting Started
+
+We use `uv` as the preferred package manager. To set up the environment and install all required packages, simply run:
+
+```bash
+uv sync
+```
+
+### Design
+
+The `01-design` folder contains the source code and the Grasshopper design file (`design_phase.ghx`). This file demonstrates a workflow for:
+*   Simple mesh generation
+*   Mesh relaxation
+*   Timber model creation
+
 ## Workshop Structure & Activities
 
 The workshop is organized as a hands-on exploration of a speculative but executable timber construction pipeline. Participants work in small groups to engage with computational design, production planning, and fabrication-oriented systems, combining short practical tasks with demonstrations and guided discussion.
