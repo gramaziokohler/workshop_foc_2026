@@ -1,4 +1,4 @@
-# Bit-2-Beam: Toward Future Pipelines for Timber Construction
+# Bit-2-Beam: Towards Future Pipelines for Timber Construction
 
 ![Workshop](./images/image2.png)
 
