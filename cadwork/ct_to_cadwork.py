@@ -1,3 +1,4 @@
+# requires: compas_timber==2.1.1-rc0
 import sys
 from pathlib import Path
 
@@ -7,38 +8,36 @@ SITE_PACKAGES = PLUGIN_ROOT / ".venv" / "Lib" / "site-packages"
 if str(SITE_PACKAGES) not in sys.path:
     sys.path.insert(0, str(SITE_PACKAGES))
 
-from compas.data import json_load, json_dump
+from attribute_controller import is_beam
+from attribute_controller import set_name
+from compas.data import json_dump
+from compas.data import json_load
 from compas.geometry import Line
-
-from compas_timber.connections import LMiterJoint
-from compas_timber.connections import TButtJoint
-from compas_timber.connections import LButtJoint
-from compas_timber.connections import XLapJoint
-from compas_timber.elements import DrillFeature
-from compas_timber.elements import CutFeature
-from compas_timber.elements import Beam
-
-from compas_cadwork.utilities.events import ElementDelta
-from compas_cadwork.utilities import remove_elements
-from compas_cadwork.utilities import get_all_element_ids
 from compas_cadwork.conversions import point_to_cadwork
 from compas_cadwork.conversions import vector_to_cadwork
 from compas_cadwork.datamodel import Element
-
-import cadwork
-from attribute_controller import set_name
-from attribute_controller import is_beam
-from element_controller import create_rectangular_beam_vectors
-from element_controller import cut_elements_with_miter
-from element_controller import cut_cross_lap
-from element_controller import cut_corner_lap
-from element_controller import cut_t_lap
-from element_controller import cut_element_with_plane
-from element_controller import create_rectangular_panel_vectors
-from element_controller import get_active_identifiable_element_ids
-
+from compas_cadwork.utilities import get_all_element_ids
+from compas_cadwork.utilities import remove_elements
+from compas_cadwork.utilities.events import ElementDelta
+from compas_timber.connections import LButtJoint
+from compas_timber.connections import LMiterJoint
+from compas_timber.connections import TButtJoint
+from compas_timber.connections import XLapJoint
+from compas_timber.elements import Beam
+from compas_timber.elements import CutFeature
+from compas_timber.elements import DrillFeature
 from cwmath.cwplane3d import CwPlane3d
 from cwmath.cwvector3d import CwVector3d
+from element_controller import create_rectangular_beam_vectors
+from element_controller import create_rectangular_panel_vectors
+from element_controller import cut_corner_lap
+from element_controller import cut_cross_lap
+from element_controller import cut_element_with_plane
+from element_controller import cut_elements_with_miter
+from element_controller import cut_t_lap
+from element_controller import get_active_identifiable_element_ids
+
+import cadwork
 
 
 def _apply_x_lap(beam_a, beam_b):
@@ -71,9 +70,7 @@ def apply_cuts(beam):
         distance = plane.distance_to_point(CwVector3d(0.0, 0.0, 0.0))
         if plane_normal.z < 0 or plane_normal.x < 0 or plane_normal.y < 0:
             distance = -distance  # geil!
-        cut_element_with_plane(
-            beam.attributes["cadwork_id"], cadwork.point_3d(*plane_normal), distance
-        )
+        cut_element_with_plane(beam.attributes["cadwork_id"], cadwork.point_3d(*plane_normal), distance)
 
 
 def point_from_corner_to_face_center(frame, ysize, zsize):
@@ -108,9 +105,7 @@ class Controller:
         # new_elements, removed_elements = self._delta.check_for_changed_elements()
         for index, wall in enumerate(self.model.walls):
             wall.group = self.model.add_group(name=f"wall0{index}", element=wall)
-        new_elements = [
-            Element.from_id(e) for e in get_active_identifiable_element_ids()
-        ]
+        new_elements = [Element.from_id(e) for e in get_active_identifiable_element_ids()]
         if new_elements:
             self.handle_new_elements(new_elements)
         # if removed_elements:
@@ -139,9 +134,7 @@ class Controller:
     def add_drilling(self, e_drill, e_beams):
         for e_b in e_beams:
             beam = self.model.element_map[e_b.id]
-            drill_line = Line.from_point_direction_length(
-                e_drill.frame.point, e_drill.frame.xaxis, e_drill.length
-            )
+            drill_line = Line.from_point_direction_length(e_drill.frame.point, e_drill.frame.xaxis, e_drill.length)
             beam.add_features(
                 [
                     DrillFeature(
@@ -160,9 +153,7 @@ class Controller:
             origin = cadwork.point_3d(*beam.frame.point)
             xaxis = cadwork.point_3d(*beam.frame.xaxis)
             zaxis = cadwork.point_3d(*beam.frame.normal)
-            element_id = create_rectangular_beam_vectors(
-                beam.width, beam.height, beam.length, origin, xaxis, zaxis
-            )
+            element_id = create_rectangular_beam_vectors(beam.width, beam.height, beam.length, origin, xaxis, zaxis)
             beam.attributes["cadwork_id"] = element_id
             beam.attributes["name"] = f"beam_{beam.graphnode}"
             model.element_map[element_id] = beam
@@ -171,15 +162,11 @@ class Controller:
     @staticmethod
     def create_walls(model):
         for wall in model.walls:
-            origin = point_from_corner_to_face_center(
-                wall.frame, wall.width, wall.height
-            )
+            origin = point_from_corner_to_face_center(wall.frame, wall.width, wall.height)
             origin = point_to_cadwork(origin)
             xaxis = vector_to_cadwork(wall.frame.xaxis)
             zaxis = vector_to_cadwork(wall.frame.normal)
-            element_id = create_rectangular_panel_vectors(
-                wall.width, wall.height, wall.length, origin, xaxis, zaxis
-            )
+            element_id = create_rectangular_panel_vectors(wall.width, wall.height, wall.length, origin, xaxis, zaxis)
             set_name([element_id], wall.name)
 
     @staticmethod
@@ -192,13 +179,14 @@ class Controller:
         }
         for joint in model.joints:
             beam_a, beam_b = joint.elements
-            applier = joint_map[type(joint)]
-            applier(beam_a, beam_b)
-        for beam in model.beams:
-            apply_cuts(beam)
+            applier = joint_map.get(type(joint))
+            if applier:
+                applier(beam_a, beam_b)
+            else:
+                print(f"no applier for {type(joint)}. skipping...")
 
 
 if __name__ == "__main__":
     controller = Controller()
-    PATH = r"model.json"
+    PATH = r"C:\Users\ckasirer\Documents\repos\workshop_foc_2026\01-design\rf_model.json"
     model = controller.load_model_from_file(PATH)
