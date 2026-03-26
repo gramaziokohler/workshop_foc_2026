@@ -57,7 +57,7 @@ wheels = [
 
 [[package]]
 name = "compas"
-version = "2.15.0"
+version = "2.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonschema" },
@@ -66,36 +66,37 @@ dependencies = [
     { name = "scipy" },
     { name = "watchdog", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/52/ec/b4264fc179ed48cd4c3990be6cf751a261f81f0c8410a2f90a53e431d9ac/compas-2.15.0.tar.gz", hash = "sha256:f3fa2143a6287651771693aa1bffe20c7ae99858451ea7776a3841baf12f7d1e", size = 2239195, upload-time = "2025-11-12T15:47:43.571Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/4d/f9de336ce5d38a0d1ec2cdfde62dbe800dca7de10c0dc7c9a05762535739/compas-2.15.1.tar.gz", hash = "sha256:57ad5aaa1dc33333fc3938ac53623b45ecbd0dce3704a9658986227c30fe085c", size = 2240329, upload-time = "2026-03-19T17:47:33.068Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/c1/9b7288a512cf31542a0db569ac5dad88cabe99aae1d180bef256c01b7b63/compas-2.15.0-py3-none-any.whl", hash = "sha256:7bd5602a31508b6dad7716c7f417841d2759ccfae11eb78713abba9477205d58", size = 2457278, upload-time = "2025-11-12T15:47:42.297Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/c8/ed36552110760981d25f1bd48778b5451267cb4eb9dda652c32813fd2c84/compas-2.15.1-py3-none-any.whl", hash = "sha256:509ab436da7fc185b66436d5a1044ab94c932e9d9ca569cb5fe225f32f4493b2", size = 2458244, upload-time = "2026-03-19T17:47:31.238Z" },
 ]
 
 [[package]]
 name = "compas-model"
-version = "0.4.4"
+version = "0.9.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "compas" },
     { name = "shapely" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/84/44/6926304a3c0e87a78766203dc5574a877f9aab77a7a8fdd48f8b6c155186/compas_model-0.4.4.tar.gz", hash = "sha256:79cbd92b36709c6a2ef1162f2071dff015d922af0d003433fb7c0491eed8a447", size = 31579, upload-time = "2024-06-13T11:43:04.677Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/ae/b853b2af041caf88fbb845dfbbcac4568270e825136b35bfed90ddfe8486/compas_model-0.9.2.tar.gz", hash = "sha256:876a92356c37526f8968ae2cfc3c503d18b1c9066d0e2aaa2f224a2b47c2fac5", size = 40180, upload-time = "2025-11-14T12:15:46.177Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/c4/e154a02c752ed089e096a964b33f1a00ffcfeeb3c639d0f8696153bfc835/compas_model-0.4.4-py3-none-any.whl", hash = "sha256:def218e8db61a53b2f71df70c0f8e2f210191a86224053ae0dbaca903ee140f2", size = 42309, upload-time = "2024-06-13T11:43:03.246Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/e3/9c2629cda9ca36f72d9fa9150a41082aa3f5b3feb8ed638b179ff42d47ac/compas_model-0.9.2-py3-none-any.whl", hash = "sha256:8da271238bc497023d930658ee950d7557a8416fcb643f1ac867234cbb2e44fe", size = 49319, upload-time = "2025-11-14T12:15:45.049Z" },
 ]
 
 [[package]]
 name = "compas-timber"
-version = "1.0.4"
+version = "2.1.1rc0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "compas" },
     { name = "compas-model" },
     { name = "rtree" },
+    { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/52/07/24063b6a5d837738711022956651015d335b655fb16a1f96d4779adf1e84/compas_timber-1.0.4.tar.gz", hash = "sha256:9ca1c650a73dfa417121bde3258f53c34b9d8a4450da1835b59acd0d1d58bdf6", size = 205861, upload-time = "2025-12-18T14:59:34.117Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/e3/5ba13f0d4dcae2ce00c80c362ed1b8a84f2385ab79f09929c663ea239577/compas_timber-2.1.1rc0.tar.gz", hash = "sha256:91bff18e5684515acfa9b9896b5e8ac10d79b2a75caef748488431ef9b363dce", size = 161499, upload-time = "2026-03-25T13:22:08.762Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/56/fdea9cdab2315ae60911c70adaaf875200a16b85e6b666cd3ecd98393ccf/compas_timber-1.0.4-py3-none-any.whl", hash = "sha256:46b190577566b3f02bed2f23a9fdfcda5d8069a6e77aec9b36014d4edfccae56", size = 307194, upload-time = "2025-12-18T14:59:32.637Z" },
+    { url = "https://files.pythonhosted.org/packages/10/77/4f264cd0c14c5167bd9103ea020d7a26a072c62adb563dc104adcdeecccf/compas_timber-2.1.1rc0-py3-none-any.whl", hash = "sha256:40513feba3fb404bb055bda664c1030dbf9759b2a9dccb0fa9ab89b2769825ff", size = 216473, upload-time = "2026-03-25T13:22:07.532Z" },
 ]
 
 [[package]]
@@ -397,6 +398,18 @@ wheels = [
 ]
 
 [[package]]
+name = "timber-design"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "compas-timber" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/2f/1e486336fce9a4a3ef650d5dd192ccf9b8034fca5e827627250e5783a7ef/timber_design-0.1.0.tar.gz", hash = "sha256:5a455246aaa1304b56d6cd8908b2bbb3e15d1d95093ba26b75cf4e77e31055dd", size = 48960, upload-time = "2026-03-25T15:54:28.764Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/6a/4c9735fcd1966ce23f0ef7c8a182921c7b4b70dce27c574ec5a4c7f9a951/timber_design-0.1.0-py3-none-any.whl", hash = "sha256:caa3c4be1c8630e838e48268512bb35c3b087b10001eb5ad75f9b2f5003b8f45", size = 70865, upload-time = "2026-03-25T15:54:27.189Z" },
+]
+
+[[package]]
 name = "tomli"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -445,6 +458,7 @@ dependencies = [
     { name = "compas" },
     { name = "compas-timber" },
     { name = "pythonnet" },
+    { name = "timber-design" },
 ]
 
 [package.dev-dependencies]
@@ -456,9 +470,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "compas", specifier = "==2.15.0" },
-    { name = "compas-timber", specifier = "==1.0.4" },
+    { name = "compas", specifier = "==2.15.1" },
+    { name = "compas-timber", specifier = "==2.1.1rc0" },
     { name = "pythonnet" },
+    { name = "timber-design", specifier = "==0.1.0" },
 ]
 
 [package.metadata.requires-dev]
