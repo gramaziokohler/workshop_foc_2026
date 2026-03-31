@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+
+
 PLUGIN_ROOT = Path(__file__).absolute().parent
 SITE_PACKAGES = PLUGIN_ROOT / ".venv" / "Lib" / "site-packages"
 
@@ -10,6 +12,7 @@ if str(SITE_PACKAGES) not in sys.path:
 from compas.data import json_load, json_dump
 from compas.geometry import Line
 
+import compas_timber
 from compas_timber.connections import LMiterJoint
 from compas_timber.connections import TButtJoint
 from compas_timber.connections import LButtJoint
@@ -199,5 +202,8 @@ class Controller:
 
 if __name__ == "__main__":
     controller = Controller()
-    PATH = r"model.json"
+
+    print(compas_timber.__version__)
+
+    PATH = r"C:\Users\AndreaSettimi\Downloads\folder_test\model.json"
     model = controller.load_model_from_file(PATH)
