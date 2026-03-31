@@ -5,13 +5,12 @@ from compas_timber.connections import TBirdsmouthJoint
 from compas_timber.connections import TButtJoint
 from compas_timber.connections import TStepJoint
 from compas_timber.connections import XLapJoint
-from compas_timber.design import CategoryRule
-from compas_timber.design import DirectRule
-from compas_timber.design import JointRuleSolver
-from compas_timber.design import TopologyRule
 from compas_timber.elements import Beam
 from compas_timber.model import TimberModel
 from rf_system import RFSystem
+from timber_design.workflow import CategoryRule
+from timber_design.workflow import JointRuleSolver
+from timber_design.workflow import TopologyRule
 
 
 class TimberModelCreator:

@@ -67,7 +67,7 @@ wheels = [
 
 [[package]]
 name = "compas"
-version = "2.15.0"
+version = "2.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonschema" },
@@ -76,9 +76,9 @@ dependencies = [
     { name = "scipy" },
     { name = "watchdog", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/52/ec/b4264fc179ed48cd4c3990be6cf751a261f81f0c8410a2f90a53e431d9ac/compas-2.15.0.tar.gz", hash = "sha256:f3fa2143a6287651771693aa1bffe20c7ae99858451ea7776a3841baf12f7d1e", size = 2239195, upload-time = "2025-11-12T15:47:43.571Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/4d/f9de336ce5d38a0d1ec2cdfde62dbe800dca7de10c0dc7c9a05762535739/compas-2.15.1.tar.gz", hash = "sha256:57ad5aaa1dc33333fc3938ac53623b45ecbd0dce3704a9658986227c30fe085c", size = 2240329, upload-time = "2026-03-19T17:47:33.068Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/c1/9b7288a512cf31542a0db569ac5dad88cabe99aae1d180bef256c01b7b63/compas-2.15.0-py3-none-any.whl", hash = "sha256:7bd5602a31508b6dad7716c7f417841d2759ccfae11eb78713abba9477205d58", size = 2457278, upload-time = "2025-11-12T15:47:42.297Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/c8/ed36552110760981d25f1bd48778b5451267cb4eb9dda652c32813fd2c84/compas-2.15.1-py3-none-any.whl", hash = "sha256:509ab436da7fc185b66436d5a1044ab94c932e9d9ca569cb5fe225f32f4493b2", size = 2458244, upload-time = "2026-03-19T17:47:31.238Z" },
 ]
 
 [[package]]
@@ -96,29 +96,30 @@ wheels = [
 
 [[package]]
 name = "compas-model"
-version = "0.4.4"
+version = "0.9.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "compas" },
     { name = "shapely" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/84/44/6926304a3c0e87a78766203dc5574a877f9aab77a7a8fdd48f8b6c155186/compas_model-0.4.4.tar.gz", hash = "sha256:79cbd92b36709c6a2ef1162f2071dff015d922af0d003433fb7c0491eed8a447", size = 31579, upload-time = "2024-06-13T11:43:04.677Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/ae/b853b2af041caf88fbb845dfbbcac4568270e825136b35bfed90ddfe8486/compas_model-0.9.2.tar.gz", hash = "sha256:876a92356c37526f8968ae2cfc3c503d18b1c9066d0e2aaa2f224a2b47c2fac5", size = 40180, upload-time = "2025-11-14T12:15:46.177Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/c4/e154a02c752ed089e096a964b33f1a00ffcfeeb3c639d0f8696153bfc835/compas_model-0.4.4-py3-none-any.whl", hash = "sha256:def218e8db61a53b2f71df70c0f8e2f210191a86224053ae0dbaca903ee140f2", size = 42309, upload-time = "2024-06-13T11:43:03.246Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/e3/9c2629cda9ca36f72d9fa9150a41082aa3f5b3feb8ed638b179ff42d47ac/compas_model-0.9.2-py3-none-any.whl", hash = "sha256:8da271238bc497023d930658ee950d7557a8416fcb643f1ac867234cbb2e44fe", size = 49319, upload-time = "2025-11-14T12:15:45.049Z" },
 ]
 
 [[package]]
 name = "compas-timber"
-version = "1.0.4"
+version = "2.1.1rc0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "compas" },
     { name = "compas-model" },
     { name = "rtree" },
+    { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/52/07/24063b6a5d837738711022956651015d335b655fb16a1f96d4779adf1e84/compas_timber-1.0.4.tar.gz", hash = "sha256:9ca1c650a73dfa417121bde3258f53c34b9d8a4450da1835b59acd0d1d58bdf6", size = 205861, upload-time = "2025-12-18T14:59:34.117Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/e3/5ba13f0d4dcae2ce00c80c362ed1b8a84f2385ab79f09929c663ea239577/compas_timber-2.1.1rc0.tar.gz", hash = "sha256:91bff18e5684515acfa9b9896b5e8ac10d79b2a75caef748488431ef9b363dce", size = 161499, upload-time = "2026-03-25T13:22:08.762Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/56/fdea9cdab2315ae60911c70adaaf875200a16b85e6b666cd3ecd98393ccf/compas_timber-1.0.4-py3-none-any.whl", hash = "sha256:46b190577566b3f02bed2f23a9fdfcda5d8069a6e77aec9b36014d4edfccae56", size = 307194, upload-time = "2025-12-18T14:59:32.637Z" },
+    { url = "https://files.pythonhosted.org/packages/10/77/4f264cd0c14c5167bd9103ea020d7a26a072c62adb563dc104adcdeecccf/compas_timber-2.1.1rc0-py3-none-any.whl", hash = "sha256:40513feba3fb404bb055bda664c1030dbf9759b2a9dccb0fa9ab89b2769825ff", size = 216473, upload-time = "2026-03-25T13:22:07.532Z" },
 ]
 
 [[package]]
@@ -437,22 +438,42 @@ dependencies = [
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4d/bc/0989043118a27cccb4e906a46b7565ce36ca7b57f5a18b78f4f1b0f72d9d/shapely-2.1.2.tar.gz", hash = "sha256:2ed4ecb28320a433db18a5bf029986aa8afcfd740745e78847e330d5d94922a9", size = 315489, upload-time = "2025-09-24T13:51:41.432Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/c4/3ce4c2d9b6aabd27d26ec988f08cb877ba9e6e96086eff81bfea93e688c7/shapely-2.1.2-cp314-cp314-macosx_10_13_x86_64.whl", hash = "sha256:9a522f460d28e2bf4e12396240a5fc1518788b2fcd73535166d748399ef0c223", size = 1831290, upload-time = "2025-09-24T13:51:13.56Z" },
-    { url = "https://files.pythonhosted.org/packages/17/b9/f6ab8918fc15429f79cb04afa9f9913546212d7fb5e5196132a2af46676b/shapely-2.1.2-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:1ff629e00818033b8d71139565527ced7d776c269a49bd78c9df84e8f852190c", size = 1641463, upload-time = "2025-09-24T13:51:14.972Z" },
-    { url = "https://files.pythonhosted.org/packages/a5/57/91d59ae525ca641e7ac5551c04c9503aee6f29b92b392f31790fcb1a4358/shapely-2.1.2-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:f67b34271dedc3c653eba4e3d7111aa421d5be9b4c4c7d38d30907f796cb30df", size = 2970145, upload-time = "2025-09-24T13:51:16.961Z" },
-    { url = "https://files.pythonhosted.org/packages/8a/cb/4948be52ee1da6927831ab59e10d4c29baa2a714f599f1f0d1bc747f5777/shapely-2.1.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:21952dc00df38a2c28375659b07a3979d22641aeb104751e769c3ee825aadecf", size = 3073806, upload-time = "2025-09-24T13:51:18.712Z" },
-    { url = "https://files.pythonhosted.org/packages/03/83/f768a54af775eb41ef2e7bec8a0a0dbe7d2431c3e78c0a8bdba7ab17e446/shapely-2.1.2-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:1f2f33f486777456586948e333a56ae21f35ae273be99255a191f5c1fa302eb4", size = 3980803, upload-time = "2025-09-24T13:51:20.37Z" },
-    { url = "https://files.pythonhosted.org/packages/9f/cb/559c7c195807c91c79d38a1f6901384a2878a76fbdf3f1048893a9b7534d/shapely-2.1.2-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:cf831a13e0d5a7eb519e96f58ec26e049b1fad411fc6fc23b162a7ce04d9cffc", size = 4133301, upload-time = "2025-09-24T13:51:21.887Z" },
-    { url = "https://files.pythonhosted.org/packages/80/cd/60d5ae203241c53ef3abd2ef27c6800e21afd6c94e39db5315ea0cbafb4a/shapely-2.1.2-cp314-cp314-win32.whl", hash = "sha256:61edcd8d0d17dd99075d320a1dd39c0cb9616f7572f10ef91b4b5b00c4aeb566", size = 1583247, upload-time = "2025-09-24T13:51:23.401Z" },
-    { url = "https://files.pythonhosted.org/packages/74/d4/135684f342e909330e50d31d441ace06bf83c7dc0777e11043f99167b123/shapely-2.1.2-cp314-cp314-win_amd64.whl", hash = "sha256:a444e7afccdb0999e203b976adb37ea633725333e5b119ad40b1ca291ecf311c", size = 1773019, upload-time = "2025-09-24T13:51:24.873Z" },
-    { url = "https://files.pythonhosted.org/packages/a3/05/a44f3f9f695fa3ada22786dc9da33c933da1cbc4bfe876fe3a100bafe263/shapely-2.1.2-cp314-cp314t-macosx_10_13_x86_64.whl", hash = "sha256:5ebe3f84c6112ad3d4632b1fd2290665aa75d4cef5f6c5d77c4c95b324527c6a", size = 1834137, upload-time = "2025-09-24T13:51:26.665Z" },
-    { url = "https://files.pythonhosted.org/packages/52/7e/4d57db45bf314573427b0a70dfca15d912d108e6023f623947fa69f39b72/shapely-2.1.2-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:5860eb9f00a1d49ebb14e881f5caf6c2cf472c7fd38bd7f253bbd34f934eb076", size = 1642884, upload-time = "2025-09-24T13:51:28.029Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/27/4e29c0a55d6d14ad7422bf86995d7ff3f54af0eba59617eb95caf84b9680/shapely-2.1.2-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:b705c99c76695702656327b819c9660768ec33f5ce01fa32b2af62b56ba400a1", size = 3018320, upload-time = "2025-09-24T13:51:29.903Z" },
-    { url = "https://files.pythonhosted.org/packages/9f/bb/992e6a3c463f4d29d4cd6ab8963b75b1b1040199edbd72beada4af46bde5/shapely-2.1.2-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:a1fd0ea855b2cf7c9cddaf25543e914dd75af9de08785f20ca3085f2c9ca60b0", size = 3094931, upload-time = "2025-09-24T13:51:32.699Z" },
-    { url = "https://files.pythonhosted.org/packages/9c/16/82e65e21070e473f0ed6451224ed9fa0be85033d17e0c6e7213a12f59d12/shapely-2.1.2-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:df90e2db118c3671a0754f38e36802db75fe0920d211a27481daf50a711fdf26", size = 4030406, upload-time = "2025-09-24T13:51:34.189Z" },
-    { url = "https://files.pythonhosted.org/packages/7c/75/c24ed871c576d7e2b64b04b1fe3d075157f6eb54e59670d3f5ffb36e25c7/shapely-2.1.2-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:361b6d45030b4ac64ddd0a26046906c8202eb60d0f9f53085f5179f1d23021a0", size = 4169511, upload-time = "2025-09-24T13:51:36.297Z" },
-    { url = "https://files.pythonhosted.org/packages/b1/f7/b3d1d6d18ebf55236eec1c681ce5e665742aab3c0b7b232720a7d43df7b6/shapely-2.1.2-cp314-cp314t-win32.whl", hash = "sha256:b54df60f1fbdecc8ebc2c5b11870461a6417b3d617f555e5033f1505d36e5735", size = 1602607, upload-time = "2025-09-24T13:51:37.757Z" },
-    { url = "https://files.pythonhosted.org/packages/9a/f6/f09272a71976dfc138129b8faf435d064a811ae2f708cb147dccdf7aacdb/shapely-2.1.2-cp314-cp314t-win_amd64.whl", hash = "sha256:0036ac886e0923417932c2e6369b6c52e38e0ff5d9120b90eef5cd9a5fc5cae9", size = 1796682, upload-time = "2025-09-24T13:51:39.233Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/de/dc856cf99a981b83aa041d1a240a65b36618657d5145d1c0c7ffb4263d5b/shapely-2.0.7-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:4abeb44b3b946236e4e1a1b3d2a0987fb4d8a63bfb3fdefb8a19d142b72001e5", size = 1478794, upload-time = "2025-01-31T02:43:38.532Z" },
+    { url = "https://files.pythonhosted.org/packages/53/ea/70fec89a9f6fa84a8bf6bd2807111a9175cee22a3df24470965acdd5fb74/shapely-2.0.7-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:cd0e75d9124b73e06a42bf1615ad3d7d805f66871aa94538c3a9b7871d620013", size = 1336402, upload-time = "2025-01-31T02:43:40.134Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/22/f6b074b08748d6f6afedd79f707d7eb88b79fa0121369246c25bbc721776/shapely-2.0.7-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7977d8a39c4cf0e06247cd2dca695ad4e020b81981d4c82152c996346cf1094b", size = 2376673, upload-time = "2025-01-31T02:43:41.922Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/f0/befc440a6c90c577300f5f84361bad80919e7c7ac381ae4960ce3195cedc/shapely-2.0.7-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0145387565fcf8f7c028b073c802956431308da933ef41d08b1693de49990d27", size = 2474380, upload-time = "2025-01-31T02:43:43.671Z" },
+    { url = "https://files.pythonhosted.org/packages/13/b8/edaf33dfb97e281d9de3871810de131b01e4f33d38d8f613515abc89d91e/shapely-2.0.7-cp39-cp39-win32.whl", hash = "sha256:98697c842d5c221408ba8aa573d4f49caef4831e9bc6b6e785ce38aca42d1999", size = 1297939, upload-time = "2025-01-31T02:43:46.287Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/95/4d164c2fcb19c51e50537aafb99ecfda82f62356bfdb6f4ca620a3932bad/shapely-2.0.7-cp39-cp39-win_amd64.whl", hash = "sha256:a3fb7fbae257e1b042f440289ee7235d03f433ea880e73e687f108d044b24db5", size = 1443665, upload-time = "2025-01-31T02:43:47.889Z" },
+]
+
+[[package]]
+name = "timber-design"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "compas-timber" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/2f/1e486336fce9a4a3ef650d5dd192ccf9b8034fca5e827627250e5783a7ef/timber_design-0.1.0.tar.gz", hash = "sha256:5a455246aaa1304b56d6cd8908b2bbb3e15d1d95093ba26b75cf4e77e31055dd", size = 48960, upload-time = "2026-03-25T15:54:28.764Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/6a/4c9735fcd1966ce23f0ef7c8a182921c7b4b70dce27c574ec5a4c7f9a951/timber_design-0.1.0-py3-none-any.whl", hash = "sha256:caa3c4be1c8630e838e48268512bb35c3b087b10001eb5ad75f9b2f5003b8f45", size = 70865, upload-time = "2026-03-25T15:54:27.189Z" },
+]
+
+[[package]]
+name = "tomli"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/30/31573e9457673ab10aa432461bee537ce6cef177667deca369efb79df071/tomli-2.4.0.tar.gz", hash = "sha256:aa89c3f6c277dd275d8e243ad24f3b5e701491a860d5121f2cdd399fbb31fc9c", size = 17477, upload-time = "2026-01-11T11:22:38.165Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/d1/136eb2cb77520a31e1f64cbae9d33ec6df0d78bdf4160398e86eec8a8754/tomli-2.4.0-py3-none-any.whl", hash = "sha256:1f776e7d669ebceb01dee46484485f43a4048746235e683bcdffacdf1fb4785a", size = 14477, upload-time = "2026-01-11T11:22:37.446Z" },
+]
+
+[[package]]
+name = "typing-extensions"
+version = "4.15.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/94/1a15dd82efb362ac84269196e94cf00f187f7ed21c242792a923cdb1c61f/typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466", size = 109391, upload-time = "2025-08-25T13:49:26.313Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548", size = 44614, upload-time = "2025-08-25T13:49:24.86Z" },
 ]
 
 [[package]]
@@ -483,6 +504,7 @@ dependencies = [
     { name = "compas-timber" },
     { name = "cwmath" },
     { name = "pythonnet" },
+    { name = "timber-design" },
 ]
 
 [package.dev-dependencies]
@@ -494,11 +516,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "compas", specifier = "==2.15.0" },
-    { name = "compas-cadwork", specifier = ">=0.10.0" },
-    { name = "compas-timber", specifier = "==1.0.4" },
-    { name = "cwmath", specifier = ">=0.0.9" },
+    { name = "compas", specifier = "==2.15.1" },
+    { name = "compas-timber", specifier = "==2.1.1rc0" },
     { name = "pythonnet" },
+    { name = "timber-design", specifier = "==0.1.0" },
 ]
 
 [package.metadata.requires-dev]

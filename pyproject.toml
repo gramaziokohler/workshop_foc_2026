@@ -5,11 +5,10 @@ description = "Workshop: Future of Construction 26"
 readme = "README.md"
 requires-python = "~=3.14.0"
 dependencies = [
-    "compas==2.15.0",
-    "compas-cadwork>=0.10.0",
-    "compas_timber==1.0.4",
-    "cwmath>=0.0.9",
-    "pythonnet",
+    "compas==2.15.1",
+    "compas_timber==2.1.1-rc0",
+    "timber_design==0.1.0",
+    "pythonnet", 
 ]
 
 [dependency-groups]
