@@ -41,13 +41,13 @@ def read_user_attributes(element_id, attr_names):
     Returns
     -------
     dict
-        Name-keyed dict: ``{"AttrName": {"index": 1, "value": "val"}, ...}``
+        Index-keyed dict: ``{"1": {"name": "AttrName", "value": "val"}, ...}``
     """
     result = {}
     for i, name in attr_names.items():
         value = ac.get_user_attribute(element_id, i)
         if value:
-            result[name] = {"index": i, "value": value}
+            result[str(i)] = {"name": name, "value": value}
     return result
 
 
@@ -63,7 +63,7 @@ def sync_user_attributes(model):
     for cadwork_id, beam in model.element_map.items():
         ua = read_user_attributes(cadwork_id, attr_names)
         if ua:
-            beam.attributes["cadwork_user_attributes"] = ua
+            beam.attributes.setdefault("cadwork", {})["user_attributes"] = ua
 
 
 # ---------------------------------------------------------------------------
@@ -128,17 +128,13 @@ class ExportController:
             expected_name = f"beam_{beam.graphnode}"
             element = name_to_element.get(expected_name)
             if element is None:
-                print(
-                    f"  WARNING: no cadwork element found for '{expected_name}', skipping"
-                )
+                print(f"  WARNING: no cadwork element found for '{expected_name}', skipping")
                 continue
-            beam.attributes["cadwork_id"] = element.id
+            beam.attributes.setdefault("cadwork", {})["id"] = element.id
             beam.attributes["name"] = expected_name
             self.model.element_map[element.id] = beam
 
-        print(
-            f"  Mapped {len(self.model.element_map)}/{len(list(self.model.beams))} beams"
-        )
+        print(f"  Mapped {len(self.model.element_map)}/{len(list(self.model.beams))} beams")
 
     # -- geometry sync --------------------------------------------------------
 
@@ -178,11 +174,7 @@ class ExportController:
         ``ct_to_cw.Controller.handle_new_elements()``.
         """
         known_ids = set(self.model.element_map.keys())
-        new_elements = [
-            Element(eid)
-            for eid in get_active_identifiable_element_ids()
-            if eid not in known_ids
-        ]
+        new_elements = [Element(eid) for eid in get_active_identifiable_element_ids() if eid not in known_ids]
         if not new_elements:
             return
 
@@ -196,9 +188,7 @@ class ExportController:
                 self._add_beam(element)
                 beam_count += 1
 
-        print(
-            f"  Added {beam_count} new beam(s) and {drill_count} drilling(s) from cadwork"
-        )
+        print(f"  Added {beam_count} new beam(s) and {drill_count} drilling(s) from cadwork")
 
     def _add_beam(self, element):
         """Create a COMPAS Timber ``Beam`` from a cadwork ``Element``."""
@@ -209,7 +199,7 @@ class ExportController:
             element.width / self.scale,
             element.height / self.scale,
         )
-        beam.attributes["cadwork_id"] = element.id
+        beam.attributes.setdefault("cadwork", {})["id"] = element.id
         beam.attributes["name"] = element.name
         self.model.add_element(beam)
         self.model.element_map[element.id] = beam
@@ -220,9 +210,7 @@ class ExportController:
         for e_b in drilled_elements:
             beam = self.model.element_map.get(e_b.id)
             if beam is None:
-                print(
-                    f"  WARNING: drilled element {e_b.id} not in element_map, skipping"
-                )
+                print(f"  WARNING: drilled element {e_b.id} not in element_map, skipping")
                 continue
             drill_line = Line.from_point_direction_length(
                 Point(

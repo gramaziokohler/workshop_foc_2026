@@ -70,7 +70,7 @@ def apply_cuts(beam, scale):
         distance = plane.distance_to_point(CwVector3d(0.0, 0.0, 0.0))
         if plane_normal.z < 0 or plane_normal.x < 0 or plane_normal.y < 0:
             distance = -distance  # geil!
-        cut_element_with_plane(beam.attributes["cadwork_id"], cadwork.point_3d(*plane_normal), distance)
+        cut_element_with_plane(beam.attributes["cadwork"]["id"], cadwork.point_3d(*plane_normal), distance)
 
 
 def _point_from_corner_to_face_center(frame, ysize, zsize):
@@ -152,7 +152,7 @@ class ImportController:
                 xaxis,
                 zaxis,
             )
-            beam.attributes["cadwork_id"] = element_id
+            beam.attributes.setdefault("cadwork", {})["id"] = element_id
             beam.attributes["name"] = f"beam_{beam.graphnode}"
             model.element_map[element_id] = beam
             set_name([element_id], beam.attributes["name"])
