@@ -8,7 +8,12 @@ dependencies = [
     "compas==2.15.1",
     "compas_timber==2.1.1-rc0",
     "timber_design==0.1.0",
-    "pythonnet", 
+    "pythonnet",
+    "black>=26.3.1",
+    "cwapi3d>=32.443.5",
+    "compas-cadwork>=0.10.0",
+    "cwmath>=0.0.9",
+    "pyqt6>=6.11.0",
 ]
 
 [dependency-groups]

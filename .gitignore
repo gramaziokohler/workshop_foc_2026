@@ -20,4 +20,9 @@ ENV/
 # Rhino
 *.rhl
 
+# Claude
+.claude/
+CLAUDE.md
 
+# vscode mcp excption for cadwork py mcp
+!.vscode/mcp.json

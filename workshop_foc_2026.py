@@ -1,209 +1,27 @@
+# requires: compas_timber==2.1.1-rc0
+# This is the entry file in Cadwork, it needs to be named workshop_foc_2026.py to be recognized by Cadwork as a plugin
+# or be executed as a script in Cadwork with the right python environment.
 import sys
 from pathlib import Path
-
-
 
 PLUGIN_ROOT = Path(__file__).absolute().parent
 SITE_PACKAGES = PLUGIN_ROOT / ".venv" / "Lib" / "site-packages"
 
-if str(SITE_PACKAGES) not in sys.path:
-    sys.path.insert(0, str(SITE_PACKAGES))
+for p in (SITE_PACKAGES, PLUGIN_ROOT):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
 
-from compas.data import json_load, json_dump
-from compas.geometry import Line
+# Force-reload all local modules under PLUGIN_ROOT so Cadwork's
+# persistent Python interpreter picks up code changes between runs.
+# SITE_PACKAGES are not reloaded since they are expected to be stable between runs, and reloading them can cause issues with some packages.
+import importlib
 
-import compas_timber
-from compas_timber.connections import LMiterJoint
-from compas_timber.connections import TButtJoint
-from compas_timber.connections import LButtJoint
-from compas_timber.connections import XLapJoint
-from compas_timber.elements import DrillFeature
-from compas_timber.elements import CutFeature
-from compas_timber.elements import Beam
+_stale = [name for name, mod in sys.modules.items() if hasattr(mod, "__file__") and mod.__file__ and str(PLUGIN_ROOT) in mod.__file__ and str(SITE_PACKAGES) not in mod.__file__]
+for name in _stale:
+    importlib.reload(sys.modules[name])
 
-from compas_cadwork.utilities.events import ElementDelta
-from compas_cadwork.utilities import remove_elements
-from compas_cadwork.utilities import get_all_element_ids
-from compas_cadwork.conversions import point_to_cadwork
-from compas_cadwork.conversions import vector_to_cadwork
-from compas_cadwork.datamodel import Element
-
-import cadwork
-from attribute_controller import set_name
-from attribute_controller import is_beam
-from element_controller import create_rectangular_beam_vectors
-from element_controller import cut_elements_with_miter
-from element_controller import cut_cross_lap
-from element_controller import cut_corner_lap
-from element_controller import cut_t_lap
-from element_controller import cut_element_with_plane
-from element_controller import create_rectangular_panel_vectors
-from element_controller import get_active_identifiable_element_ids
-
-from cwmath.cwplane3d import CwPlane3d
-from cwmath.cwvector3d import CwVector3d
-
-
-def _apply_x_lap(beam_a, beam_b):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
-    cut_cross_lap([id_a, id_b], beam_a.width / 2.0, 0, 0, 0, 0, 0)
-
-
-def _apply_l_miter(beam_a, beam_b):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
-    cut_elements_with_miter(id_a, id_b)
-
-
-def _extend_l_butt(beam_a, beam_b):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
-    cut_corner_lap([id_a, id_b], 0, 0, 0, 0, 0, 0, 0)  # this extends
-
-
-def _extend_t_butt(beam_a, beam_b):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
-    cut_t_lap([id_a, id_b], 0, 0, 0, 0, 0, 0, 0)
-
-
-def apply_cuts(beam):
-    for f in filter(lambda x: isinstance(x, CutFeature), beam.features):
-        print(f"applying cut owner: {f.owner}")
-        if f.owner and f.owner == LMiterJoint.__name__:
-            continue
-        plane_normal = CwVector3d(*f.cutting_plane.normal)
-        plane = CwPlane3d(CwVector3d(*f.cutting_plane.point), plane_normal)
-        distance = plane.distance_to_point(CwVector3d(0.0, 0.0, 0.0))
-        if plane_normal.z < 0 or plane_normal.x < 0 or plane_normal.y < 0:
-            distance = -distance  # geil!
-        cut_element_with_plane(
-            beam.attributes["cadwork_id"], cadwork.point_3d(*plane_normal), distance
-        )
-
-def point_from_corner_to_face_center(frame, ysize, zsize):
-    origin = frame.point
-    yaxis = frame.yaxis
-    zaxis = frame.normal
-    yaxis = yaxis * ysize * 0.5
-    zaxis = zaxis * zsize * 0.5
-    return origin + yaxis + zaxis
-
-
-class Controller:
-    def __init__(self):
-        # TODO: iterate on building groups, make model from each
-        self.model = None
-        self._delta = ElementDelta()
-
-    def load_model_from_file(self, file_path):
-        # self.clear_model()
-        model = json_load(file_path)
-        # self.create_walls(model)
-        self.create_beams(model)
-        self.create_connections(model)
-        self.model = model
-        self._delta.reset()
-        return model
-
-    def clear_model(self):
-        remove_elements(list(get_all_element_ids()))
-
-    def export_model_to_file(self, file_path):
-        # new_elements, removed_elements = self._delta.check_for_changed_elements()
-        for index, wall in enumerate(self.model.walls):
-            wall.group = self.model.add_group(name=f"wall0{index}", element=wall)
-        new_elements = [
-            Element.from_id(e) for e in get_active_identifiable_element_ids()
-        ]
-        if new_elements:
-            self.handle_new_elements(new_elements)
-        # if removed_elements:
-        #     self.handle_removed_elements(removed_elements)
-        json_dump(self.model, file_path)
-
-    def handle_new_elements(self, new_elements):
-        print(f"new elements:{new_elements}")
-        for element in new_elements:
-            if element.is_drilling:
-                drilled_elements = element.get_elements_in_contact()
-                self.add_drilling(element, drilled_elements)
-            elif is_beam(element.id):
-                self.add_beam(element)
-
-    def add_beam(self, e_beam):
-        beam = Beam(e_beam.frame, e_beam.length, e_beam.width, e_beam.height)
-        # HACK: mega hack, figure out how to get available groups, and how to associate beams with HK in cadwork
-        group = self.model.walls[1].group
-        self.model.add_element(beam, parent=group)
-        self.model._beams.append(beam)
-
-    def find_connections(self):
-        pass
-
-    def add_drilling(self, e_drill, e_beams):
-        for e_b in e_beams:
-            beam = self.model.element_map[e_b.id]
-            drill_line = Line.from_point_direction_length(
-                e_drill.frame.point, e_drill.frame.xaxis, e_drill.length
-            )
-            beam.add_features(
-                [
-                    DrillFeature(
-                        drill_line,
-                        diameter=e_drill.width,
-                        length=e_drill.length,
-                        is_joinery=False,
-                    )
-                ]
-            )
-
-    @staticmethod
-    def create_beams(model):
-        model.element_map = {}
-        for beam in model.beams:
-            origin = cadwork.point_3d(*beam.frame.point)
-            xaxis = cadwork.point_3d(*beam.frame.xaxis)
-            zaxis = cadwork.point_3d(*beam.frame.normal)
-            element_id = create_rectangular_beam_vectors(
-                beam.width, beam.height, beam.length, origin, xaxis, zaxis
-            )
-            beam.attributes["cadwork_id"] = element_id
-            beam.attributes["name"] = f"beam_{beam.graphnode}"
-            model.element_map[element_id] = beam
-            set_name([element_id], beam.attributes["name"])
-
-    @staticmethod
-    def create_walls(model):
-        for wall in model.walls:
-            origin = point_from_corner_to_face_center(
-                wall.frame, wall.width, wall.height
-            )
-            origin = point_to_cadwork(origin)
-            xaxis = vector_to_cadwork(wall.frame.xaxis)
-            zaxis = vector_to_cadwork(wall.frame.normal)
-            element_id = create_rectangular_panel_vectors(
-                wall.width, wall.height, wall.length, origin, xaxis, zaxis
-            )
-            set_name([element_id], wall.name)
-
-    @staticmethod
-    def create_connections(model):
-        joint_map = {
-            LMiterJoint: _apply_l_miter,
-            TButtJoint: _extend_t_butt,
-            LButtJoint: _extend_l_butt,
-            XLapJoint: _apply_x_lap,
-        }
-        for joint in model.joints:
-            beam_a, beam_b = joint.elements
-            applier = joint_map[type(joint)]
-            applier(beam_a, beam_b)
-        for beam in model.beams:
-            apply_cuts(beam)
-
+# Traditional imports from here ..
+from workshop_foc_2026_2 import run_from_dialog
 
 if __name__ == "__main__":
-    controller = Controller()
-
-    print(compas_timber.__version__)
-
-    PATH = r"C:\Users\AndreaSettimi\Downloads\folder_test\model.json"
-    model = controller.load_model_from_file(PATH)
+    run_from_dialog()
