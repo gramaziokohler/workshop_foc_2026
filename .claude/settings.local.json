@@ -6,7 +6,28 @@
       "Bash(uv pip:*)",
       "Bash(uv run:*)",
       "Bash(pip index:*)",
-      "Bash(uv lock:*)"
+      "Bash(uv lock:*)",
+      "mcp__claude_ai_mcp_pyapi_canada_v1__search_api_examples",
+      "mcp__claude_ai_mcp_pyapi_canada_v1__search_api_signatures",
+      "Bash(xargs grep:*)",
+      "Bash(grep -E \"\\\\.\\(py|pyi\\)$\")",
+      "Bash(grep -E \"\\\\.\\(py|json|md\\)$\")",
+      "Bash(python3 -c \"import element_controller as ec; print\\(dir\\(ec\\)\\)\")",
+      "Bash(xargs basename:*)",
+      "Bash(grep -nA 5 \"def get.*coord\\\\|def get.*axis\\\\|def get.*local\" \"C:\\\\cadwork_repos\\\\workshop_foc_2026\\\\.venv\\\\Lib\\\\site-packages\\\\element_controller\\\\__init__.pyi\")",
+      "Bash(grep:*)",
+      "Read(//c/tmp/**)",
+      "Bash(gh api:*)",
+      "Bash(gh search:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:github.com)",
+      "mcp__cadwork3d_aibridge__get_all_elements_ids",
+      "mcp__cadwork3d_aibridge__get_elements_geometry_attributes",
+      "mcp__cadwork3d_aibridge__execute_script",
+      "Bash(python3:*)",
+      "Bash(find /c/cadwork_repos/workshop_foc_2026 -name \"*.py\" -not -path \"*/.venv/*\" -type f -exec wc -l {} +)",
+      "Bash(python:*)"
     ]
   }
 }
