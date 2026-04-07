@@ -35,27 +35,27 @@ from scripts.cw_to_ct import sync_user_attributes
 
 
 def _apply_x_lap(beam_a, beam_b, scale, **kwargs):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
+    id_a, id_b = beam_a.attributes["cadwork"]["id"], beam_b.attributes["cadwork"]["id"]
     cut_cross_lap([id_a, id_b], beam_a.width * scale / 2.0, 0, 0, 0, 0, 0)
 
 
 def _apply_l_miter(beam_a, beam_b, scale, **kwargs):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
+    id_a, id_b = beam_a.attributes["cadwork"]["id"], beam_b.attributes["cadwork"]["id"]
     cut_elements_with_miter(id_a, id_b)
 
 
 def _extend_l_butt(beam_a, beam_b, scale, **kwargs):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
+    id_a, id_b = beam_a.attributes["cadwork"]["id"], beam_b.attributes["cadwork"]["id"]
     cut_corner_lap([id_a, id_b], 0, 0, 0, 0, 0, 0, 0)
 
 
 def _extend_t_butt(beam_a, beam_b, scale, **kwargs):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
+    id_a, id_b = beam_a.attributes["cadwork"]["id"], beam_b.attributes["cadwork"]["id"]
     cut_t_lap([id_a, id_b], 0, 0, 0, 0, 0, 0, 0)
 
 
 def _apply_t_birdsmouth(beam_a, beam_b, scale, **kwargs):
-    id_a, id_b = beam_a.attributes["cadwork_id"], beam_b.attributes["cadwork_id"]
+    id_a, id_b = beam_a.attributes["cadwork"]["id"], beam_b.attributes["cadwork"]["id"]
     run_birdsmouth(id_a, id_b)
 
 
