@@ -3,6 +3,27 @@ revision = 3
 requires-python = "==3.14.*"
 
 [[package]]
+name = "antikythera-sdk"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "compas" },
+    { name = "compas-eve" },
+    { name = "compas-pb" },
+    { name = "compas-timber" },
+    { name = "coolname" },
+    { name = "jsonschema" },
+    { name = "mqtthandler" },
+    { name = "packaging" },
+    { name = "python-dotenv" },
+    { name = "watchdog" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/a0/f4ecc2c173601e61ae2e83ffc7284ffa22bfe5cee1de2f25b36d5a539496/antikythera_sdk-0.3.0.tar.gz", hash = "sha256:40df7acb24ab4b8bc3f68876abc573132e8fc9d21482e0ac616b7bc95aa46a7d", size = 92507, upload-time = "2026-04-24T07:40:40.773Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/7c/eca565467ad109815c1466ad2c9c8b20620ed336a8615a281cafb140383c/antikythera_sdk-0.3.0-py3-none-any.whl", hash = "sha256:c1130148c010e398c8a9ca4e037afe823bb0c67ebee43967f66e417a6ca1da94", size = 107104, upload-time = "2026-04-24T07:40:39.266Z" },
+]
+
+[[package]]
 name = "attrs"
 version = "25.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -129,6 +150,19 @@ wheels = [
 ]
 
 [[package]]
+name = "compas-eve"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "compas" },
+    { name = "paho-mqtt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/63/96/ca472ac757cad6474b829f467b0f4cfe10cab58dd0f40e212f7d62a045e2/compas_eve-2.2.0.tar.gz", hash = "sha256:dd5a65539f01a35b5553dc8493535c967fce447bac3c94f0e3640782a8396af0", size = 44296, upload-time = "2026-04-16T09:54:59.821Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/76/85/051569ee3c1ab6d3f0d0de43a13f2a7072b1354aeedd14abd5c956dd9ac8/compas_eve-2.2.0-py2.py3-none-any.whl", hash = "sha256:6513fcca4255c67840fa44f8aa92cd84fd0b1082ae7a5a31735388ba9e70fde9", size = 47168, upload-time = "2026-04-16T09:54:58.394Z" },
+]
+
+[[package]]
 name = "compas-model"
 version = "0.9.2"
 source = { registry = "https://pypi.org/simple" }
@@ -142,8 +176,21 @@ wheels = [
 ]
 
 [[package]]
+name = "compas-pb"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "compas" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c5/ca/01ebfe23787eb5d020f4855898cdacafe0cdda97a369e1818a65183a05bd/compas_pb-0.5.0.tar.gz", hash = "sha256:4ff15ad73abfe8349a1e04671ce185f2d5a6309aef6df1c7572aae78fb1fec93", size = 33689, upload-time = "2026-05-08T14:01:47.998Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/38/1ec130a8a2ab137049716a3333fd2eb556e6d7d1a4e04f7c893eb4ab4d34/compas_pb-0.5.0-py3-none-any.whl", hash = "sha256:b21582102b87155816d13c38fcbc9a8daf4ec3383c243f3b1f7597ae7899c639", size = 28422, upload-time = "2026-05-08T14:01:46.991Z" },
+]
+
+[[package]]
 name = "compas-timber"
-version = "2.1.1rc0"
+version = "2.1.1rc1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "compas" },
@@ -151,9 +198,18 @@ dependencies = [
     { name = "rtree" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/83/e3/5ba13f0d4dcae2ce00c80c362ed1b8a84f2385ab79f09929c663ea239577/compas_timber-2.1.1rc0.tar.gz", hash = "sha256:91bff18e5684515acfa9b9896b5e8ac10d79b2a75caef748488431ef9b363dce", size = 161499, upload-time = "2026-03-25T13:22:08.762Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/e3/02fc27dc950c4396f6b0046f352627629afb6849613934e625c2a03e946d/compas_timber-2.1.1rc1.tar.gz", hash = "sha256:0f4e449b47df828e2b5ecabe75aec9d4910a44c7709a10391b9504a831bb1a44", size = 169867, upload-time = "2026-04-01T13:19:47.007Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/77/4f264cd0c14c5167bd9103ea020d7a26a072c62adb563dc104adcdeecccf/compas_timber-2.1.1rc0-py3-none-any.whl", hash = "sha256:40513feba3fb404bb055bda664c1030dbf9759b2a9dccb0fa9ab89b2769825ff", size = 216473, upload-time = "2026-03-25T13:22:07.532Z" },
+    { url = "https://files.pythonhosted.org/packages/16/fe/74f42c5859dca7df6d3694a3fc2546016aab5631f5cc5209efa4b23f5208/compas_timber-2.1.1rc1-py3-none-any.whl", hash = "sha256:f24a430374057d5fcfc9b262f15ba0b11f045c9aee85d58b229b7c0aa74a8ccd", size = 225196, upload-time = "2026-04-01T13:19:45.462Z" },
+]
+
+[[package]]
+name = "coolname"
+version = "5.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/45/deae12f31934301a488df985880240a200119aca2e4b5ceba71d73bc5e86/coolname-5.0.0.tar.gz", hash = "sha256:594bc6c98ebc75ddd51c0ce10efbb5d2556c14eac60b5b36900dfdd5db20eecf", size = 45800, upload-time = "2026-04-23T06:04:50.824Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/97/35/cf824e535233c432048bd7455b28808776471ab5861375772b2c98ea4cbd/coolname-5.0.0-py3-none-any.whl", hash = "sha256:b86eea9670aa0620965167d1bfadfe654fabec839a5b51e8da611c4a64f86192", size = 47368, upload-time = "2026-04-23T06:04:49.374Z" },
 ]
 
 [[package]]
@@ -229,6 +285,15 @@ wheels = [
 ]
 
 [[package]]
+name = "mqtthandler"
+version = "0.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "paho-mqtt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bd/77/05c1d1d24040f2812e4b4a5806f0d1783f59c15c3cf56d3da2446df4d1d9/mqtthandler-0.1.5.tar.gz", hash = "sha256:2199db2663844083ea830e78b4eaa8e4409db701eed7810628620212b07e1d02", size = 8241, upload-time = "2022-07-25T00:22:02.601Z" }
+
+[[package]]
 name = "mypy-extensions"
 version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -285,6 +350,15 @@ wheels = [
 ]
 
 [[package]]
+name = "paho-mqtt"
+version = "2.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/39/15/0a6214e76d4d32e7f663b109cf71fb22561c2be0f701d67f93950cd40542/paho_mqtt-2.1.0.tar.gz", hash = "sha256:12d6e7511d4137555a3f6ea167ae846af2c7357b10bc6fa4f7c3968fc1723834", size = 148848, upload-time = "2024-04-29T19:52:55.591Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/cb/00451c3cf31790287768bb12c6bec834f5d292eaf3022afc88e14b8afc94/paho_mqtt-2.1.0-py3-none-any.whl", hash = "sha256:6db9ba9b34ed5bc6b6e3812718c7e06e2fd7444540df2455d2c51bd58808feee", size = 67219, upload-time = "2024-04-29T19:52:48.345Z" },
+]
+
+[[package]]
 name = "pathspec"
 version = "1.0.4"
 source = { registry = "https://pypi.org/simple" }
@@ -309,6 +383,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
+]
+
+[[package]]
+name = "protobuf"
+version = "7.34.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6b/6b/a0e95cad1ad7cc3f2c6821fcab91671bd5b78bd42afb357bb4765f29bc41/protobuf-7.34.1.tar.gz", hash = "sha256:9ce42245e704cc5027be797c1db1eb93184d44d1cdd71811fb2d9b25ad541280", size = 454708, upload-time = "2026-03-20T17:34:47.036Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/11/3325d41e6ee15bf1125654301211247b042563bcc898784351252549a8ad/protobuf-7.34.1-cp310-abi3-macosx_10_9_universal2.whl", hash = "sha256:d8b2cc79c4d8f62b293ad9b11ec3aebce9af481fa73e64556969f7345ebf9fc7", size = 429247, upload-time = "2026-03-20T17:34:37.024Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/9d/aa69df2724ff63efa6f72307b483ce0827f4347cc6d6df24b59e26659fef/protobuf-7.34.1-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:5185e0e948d07abe94bb76ec9b8416b604cfe5da6f871d67aad30cbf24c3110b", size = 325753, upload-time = "2026-03-20T17:34:38.751Z" },
+    { url = "https://files.pythonhosted.org/packages/92/e8/d174c91fd48e50101943f042b09af9029064810b734e4160bbe282fa1caa/protobuf-7.34.1-cp310-abi3-manylinux2014_s390x.whl", hash = "sha256:403b093a6e28a960372b44e5eb081775c9b056e816a8029c61231743d63f881a", size = 340198, upload-time = "2026-03-20T17:34:39.871Z" },
+    { url = "https://files.pythonhosted.org/packages/53/1b/3b431694a4dc6d37b9f653f0c64b0a0d9ec074ee810710c0c3da21d67ba7/protobuf-7.34.1-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:8ff40ce8cd688f7265326b38d5a1bed9bfdf5e6723d49961432f83e21d5713e4", size = 324267, upload-time = "2026-03-20T17:34:41.1Z" },
+    { url = "https://files.pythonhosted.org/packages/85/29/64de04a0ac142fb685fd09999bc3d337943fb386f3a0ec57f92fd8203f97/protobuf-7.34.1-cp310-abi3-win32.whl", hash = "sha256:34b84ce27680df7cca9f231043ada0daa55d0c44a2ddfaa58ec1d0d89d8bf60a", size = 426628, upload-time = "2026-03-20T17:34:42.536Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/87/cb5e585192a22b8bd457df5a2c16a75ea0db9674c3a0a39fc9347d84e075/protobuf-7.34.1-cp310-abi3-win_amd64.whl", hash = "sha256:e97b55646e6ce5cbb0954a8c28cd39a5869b59090dfaa7df4598a7fba869468c", size = 437901, upload-time = "2026-03-20T17:34:44.112Z" },
+    { url = "https://files.pythonhosted.org/packages/88/95/608f665226bca68b736b79e457fded9a2a38c4f4379a4a7614303d9db3bc/protobuf-7.34.1-py3-none-any.whl", hash = "sha256:bb3812cd53aefea2b028ef42bd780f5b96407247f20c6ef7c679807e9d188f11", size = 170715, upload-time = "2026-03-20T17:34:45.384Z" },
 ]
 
 [[package]]
@@ -386,6 +475,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d1/db/7ef3487e0fb0049ddb5ce41d3a49c235bf9ad299b6a25d5780a89f19230f/pytest-9.0.2.tar.gz", hash = "sha256:75186651a92bd89611d1d9fc20f0b4345fd827c41ccd5c299a868a05d70edf11", size = 1568901, upload-time = "2025-12-06T21:30:51.014Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl", hash = "sha256:711ffd45bf766d5264d487b917733b453d917afd2b0ad65223959f59089f875b", size = 374801, upload-time = "2025-12-06T21:30:49.154Z" },
+]
+
+[[package]]
+name = "python-dotenv"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
 ]
 
 [[package]]
@@ -614,6 +712,7 @@ name = "workshop-foc-2026"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "antikythera-sdk" },
     { name = "black" },
     { name = "compas" },
     { name = "compas-cadwork" },
@@ -634,10 +733,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "antikythera-sdk", specifier = "==0.3.0" },
     { name = "black", specifier = ">=26.3.1" },
     { name = "compas", specifier = "==2.15.1" },
     { name = "compas-cadwork", specifier = ">=0.10.0" },
-    { name = "compas-timber", specifier = "==2.1.1rc0" },
+    { name = "compas-timber", specifier = "==2.1.1rc1" },
     { name = "cwapi3d", specifier = ">=32.443.5" },
     { name = "cwmath", specifier = ">=0.0.9" },
     { name = "pyqt6", specifier = ">=6.11.0" },
