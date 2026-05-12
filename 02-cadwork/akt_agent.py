@@ -1,27 +1,54 @@
 """Antikythera agent for Cadwork integration with PyQt6 UI."""
 
+import sys
+from pathlib import Path
+
+PLUGIN_ROOT = Path(__file__).absolute().parent
+SITE_PACKAGES = PLUGIN_ROOT / ".venv" / "Lib" / "site-packages"
+
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
+
+if str(SITE_PACKAGES) not in sys.path:
+    sys.path.insert(0, str(SITE_PACKAGES))
+
 import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
 import os
+import socket
 import sys
 import threading
-from typing import Any
-from typing import Dict
+import time
+from typing import Any, Dict
 
+import utility_controller as uc
 from antikythera.models import Task
-from antikythera_agents import Agent
-from antikythera_agents import agent
-from antikythera_agents import tool
+from antikythera_agents import Agent, agent, tool
 from antikythera_agents.launcher import AgentLauncher
-from PyQt6.QtCore import QObject
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtWidgets import QFrame
-from PyQt6.QtWidgets import QHBoxLayout
-from PyQt6.QtWidgets import QLabel
-from PyQt6.QtWidgets import QMainWindow
-from PyQt6.QtWidgets import QPushButton
-from PyQt6.QtWidgets import QVBoxLayout
-from PyQt6.QtWidgets import QWidget
+from PyQt5 import QtCore
+from PyQt5.QtCore import (
+    QEventLoop,
+    QObject,
+    QSocketNotifier,
+    QThread,
+    QTimer,
+    pyqtSignal,
+)
+from PyQt5.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+    QDockWidget,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -53,6 +80,8 @@ class AgentUIBridge(QObject):
     ready_for_interaction = pyqtSignal()
     export_started = pyqtSignal()
     task_completed = pyqtSignal()
+    connected = pyqtSignal()
+    connection_error = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -83,6 +112,98 @@ class AgentUIBridge(QObject):
 
 
 # ---------------------------------------------------------------------------
+# Paho ↔ Qt event-loop bridge
+# ---------------------------------------------------------------------------
+
+
+class MqttLoopManager(QObject):
+    """Integrates a paho MQTT client into the Qt event loop properly.
+
+    Uses QSocketNotifier to react to read/write readiness on paho's raw socket
+    (fully event-driven, no polling) and a slow QTimer for keepalive/misc work.
+    Call stop() before destroying the paho client.
+    """
+
+    def __init__(self, client, parent=None):
+        super().__init__(parent)
+        self._client = client
+
+        # Take over from paho's internal threading.Thread.
+        client.loop_stop()
+
+        fd = client.socket().fileno()
+
+        self._read_notifier = QSocketNotifier(fd, QSocketNotifier.Read, self)
+        self._read_notifier.activated.connect(self._on_readable)
+
+        self._write_notifier = QSocketNotifier(fd, QSocketNotifier.Write, self)
+        self._write_notifier.activated.connect(self._on_writable)
+        self._write_notifier.setEnabled(False)  # enabled only when paho has data to send
+
+        # Keepalives, ping timeouts, reconnect logic — doesn't need to be frequent.
+        self._misc_timer = QTimer(self)
+        self._misc_timer.setInterval(1000)
+        self._misc_timer.timeout.connect(self._on_misc)
+        self._misc_timer.start()
+
+    def _on_readable(self):
+        self._client.loop_read()
+        self._sync_write_notifier()
+
+    def _on_writable(self):
+        self._client.loop_write()
+        self._sync_write_notifier()
+
+    def _on_misc(self):
+        self._client.loop_misc()
+        self._sync_write_notifier()
+
+    def _sync_write_notifier(self):
+        """Enable the write notifier only when paho actually has pending writes."""
+        self._write_notifier.setEnabled(self._client.want_write())
+
+    def stop(self):
+        self._read_notifier.setEnabled(False)
+        self._write_notifier.setEnabled(False)
+        self._misc_timer.stop()
+
+
+# ---------------------------------------------------------------------------
+# Connection worker
+# ---------------------------------------------------------------------------
+
+
+class ConnectWorker(QThread):
+    """Runs the broker TCP probe + AgentLauncher construction off the main thread.
+
+    Using QThread (instead of threading.Thread) ensures the Cadwork Python
+    runtime keeps the thread scheduled even when the main thread is idle.
+    """
+
+    succeeded = pyqtSignal()
+    failed = pyqtSignal(str)
+
+    def __init__(self, host: str, port: int = 1883):
+        super().__init__()
+        self.host = host
+        self.port = port
+
+    def run(self) -> None:
+        global _launcher
+        try:
+            socket.create_connection((self.host, self.port), timeout=5).close()
+        except OSError as exc:
+            self.failed.emit(f"Cannot reach {self.host}:{self.port} — {exc}")
+            return
+        try:
+            _launcher = AgentLauncher(broker_host=self.host, broker_port=self.port)
+            _launcher.start()
+            self.succeeded.emit()
+        except Exception as exc:
+            self.failed.emit(str(exc))
+
+
+# ---------------------------------------------------------------------------
 # Qt window
 # ---------------------------------------------------------------------------
 
@@ -105,11 +226,13 @@ QPushButton:disabled {
 """
 
 
-class AgentWindow(QMainWindow):
+class AgentWindow(QDockWidget):
     def __init__(self, bridge: AgentUIBridge):
         super().__init__()
         self.bridge = bridge
         self._build_ui()
+        bridge.connected.connect(self._on_connected)
+        bridge.connection_error.connect(self._on_connection_error)
         bridge.import_started.connect(self._on_import_started)
         bridge.ready_for_interaction.connect(self._on_ready_for_interaction)
         bridge.export_started.connect(self._on_export_started)
@@ -117,32 +240,72 @@ class AgentWindow(QMainWindow):
 
     def _build_ui(self) -> None:
         self.setWindowTitle("Cadwork Agent")
-        self.setMinimumSize(380, 240)
 
         root = QWidget()
-        self.setCentralWidget(root)
+        root.setMinimumSize(380, 280)
+        self.setWidget(root)
         layout = QVBoxLayout(root)
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
 
-        # ── status row ──────────────────────────────────────────────────────
-        status_row = QHBoxLayout()
-        self._dot = QLabel("●")
-        self._dot.setStyleSheet("color: #22c55e; font-size: 20px;")
-        self._status_lbl = QLabel("Online")
-        self._status_lbl.setStyleSheet("font-size: 14px; font-weight: bold;")
-        status_row.addWidget(self._dot)
-        status_row.addWidget(self._status_lbl)
-        status_row.addStretch()
-        layout.addLayout(status_row)
+        # ── collapsible connection panel ─────────────────────────────────────
+        self._toggle_btn = QToolButton()
+        self._toggle_btn.setText("Connection Settings")
+        self._toggle_btn.setCheckable(True)
+        self._toggle_btn.setChecked(True)
+        self._toggle_btn.setArrowType(QtCore.Qt.DownArrow)
+        self._toggle_btn.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self._toggle_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self._toggle_btn.setStyleSheet("font-size: 12px; font-weight: bold; text-align: left;")
+        self._toggle_btn.toggled.connect(self._on_panel_toggled)
+        layout.addWidget(self._toggle_btn)
+
+        self._conn_panel = QFrame()
+        self._conn_panel.setFrameShape(QFrame.Shape.StyledPanel)
+        conn_layout = QVBoxLayout(self._conn_panel)
+        conn_layout.setContentsMargins(8, 8, 8, 8)
+        conn_layout.setSpacing(8)
+
+        ip_row = QHBoxLayout()
+        ip_row.addWidget(QLabel("Broker IP:"))
+        self._ip_input = QLineEdit()
+        self._ip_input.setPlaceholderText("e.g. 192.168.1.100")
+        self._ip_input.setText("172.20.10.12")
+        self._ip_input.returnPressed.connect(self._on_connect_clicked)
+        ip_row.addWidget(self._ip_input)
+        conn_layout.addLayout(ip_row)
+
+        self._connect_btn = QPushButton("Connect")
+        self._connect_btn.setStyleSheet(_BTN_STYLE)
+        self._connect_btn.clicked.connect(self._on_connect_clicked)
+        conn_layout.addWidget(self._connect_btn)
+
+        self._conn_error_lbl = QLabel()
+        self._conn_error_lbl.setStyleSheet("color: #ef4444; font-size: 11px;")
+        self._conn_error_lbl.setWordWrap(True)
+        self._conn_error_lbl.hide()
+        conn_layout.addWidget(self._conn_error_lbl)
+
+        layout.addWidget(self._conn_panel)
 
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setStyleSheet("color: #e5e7eb;")
         layout.addWidget(sep)
 
+        # ── status row ──────────────────────────────────────────────────────
+        status_row = QHBoxLayout()
+        self._dot = QLabel("●")
+        self._dot.setStyleSheet("color: #9ca3af; font-size: 20px;")
+        self._status_lbl = QLabel("Not connected")
+        self._status_lbl.setStyleSheet("font-size: 14px; font-weight: bold;")
+        status_row.addWidget(self._dot)
+        status_row.addWidget(self._status_lbl)
+        status_row.addStretch()
+        layout.addLayout(status_row)
+
         # ── task / file info ─────────────────────────────────────────────────
-        self._task_lbl = QLabel("Waiting for tasks…")
+        self._task_lbl = QLabel("")
         self._task_lbl.setStyleSheet("font-size: 12px; color: #6b7280;")
         self._task_lbl.setWordWrap(True)
         layout.addWidget(self._task_lbl)
@@ -156,7 +319,67 @@ class AgentWindow(QMainWindow):
         self._finish_btn.clicked.connect(self._on_finish_clicked)
         layout.addWidget(self._finish_btn)
 
-    # ── slots ────────────────────────────────────────────────────────────────
+    # ── connection panel slots ───────────────────────────────────────────────
+
+    def _on_panel_toggled(self, checked: bool) -> None:
+        self._conn_panel.setVisible(checked)
+        self._toggle_btn.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
+
+    def _on_connect_clicked(self) -> None:
+        global _launcher
+        host = self._ip_input.text().strip()
+        if not host:
+            self._conn_error_lbl.setText("Please enter a broker IP address.")
+            self._conn_error_lbl.show()
+            return
+
+        self._connect_btn.setEnabled(False)
+        self._conn_error_lbl.hide()
+        self._dot.setStyleSheet("color: #f59e0b; font-size: 20px;")
+        self._status_lbl.setText("Connecting…")
+
+        LOG.info(f"Attempting to connect to broker: {host}:1883")
+        self._connect_worker = ConnectWorker(host, port=1883)
+
+        loop = QEventLoop()
+        self._connect_worker.succeeded.connect(loop.quit)
+        self._connect_worker.failed.connect(lambda _: loop.quit())
+        self._connect_worker.succeeded.connect(self.bridge.connected)
+        self._connect_worker.failed.connect(self.bridge.connection_error)
+        self._connect_worker.finished.connect(self._connect_worker.deleteLater)
+        self._connect_worker.start()
+
+        # Block the main thread with a local event loop so Qt keeps processing
+        # events (and the QThread keeps making progress) until connection
+        # succeeds or fails.
+        loop.exec_()
+
+    def _on_connected(self) -> None:
+        self._dot.setStyleSheet("color: #22c55e; font-size: 20px;")
+        self._status_lbl.setText("Online")
+        self._task_lbl.setText("Waiting for tasks…")
+        # Collapse the connection panel
+        self._toggle_btn.setChecked(False)
+
+        # Hand paho's network I/O to Qt's event loop via socket notifiers.
+        self._mqtt_loop = MqttLoopManager(_launcher.transport.client, parent=self)
+
+        # AgentLauncher executes tasks in threading.Threads which only get the
+        # GIL when the main thread yields it.  A periodic sleep(0) from a
+        # QTimer is the correct way to yield the GIL without busy-spinning.
+        self._gil_yield_timer = QTimer(self)
+        self._gil_yield_timer.setInterval(10)  # 100 Hz
+        self._gil_yield_timer.timeout.connect(lambda: time.sleep(0))
+        self._gil_yield_timer.start()
+
+    def _on_connection_error(self, message: str) -> None:
+        self._dot.setStyleSheet("color: #ef4444; font-size: 20px;")
+        self._status_lbl.setText("Connection failed")
+        self._conn_error_lbl.setText(f"Error: {message}")
+        self._conn_error_lbl.show()
+        self._connect_btn.setEnabled(True)
+
+    # ── agent status slots ───────────────────────────────────────────────────
 
     def _on_import_started(self, task_id: str, task_type: str) -> None:
         self._dot.setStyleSheet("color: #f59e0b; font-size: 20px;")
@@ -188,7 +411,7 @@ class AgentWindow(QMainWindow):
 # ---------------------------------------------------------------------------
 
 
-@agent(type="cadwork")
+@agent(type="foc")
 class CadworkAgent(Agent):
     """Agent that imports a COMPAS Timber model into Cadwork, waits for the
     user to finish manual work, then exports the modified model back to CT."""
@@ -205,7 +428,7 @@ class CadworkAgent(Agent):
     def _bridge(self) -> "AgentUIBridge | None":
         return _UI_BRIDGE
 
-    @tool(name="process_model")
+    @tool(name="planning")
     def process_model(self, task: Task) -> Dict[str, Any]:
         """Import a COMPAS Timber model into Cadwork, let the user work on it,
         then export the modified model back to COMPAS Timber format.
@@ -218,28 +441,25 @@ class CadworkAgent(Agent):
             Path for the exported JSON.  Defaults to
             ``<input_stem>_modified<ext>``.
         """
-        timber_model = task.get_input_value("timber_model") or task.get_param_value("timber_model")
+        timber_model = task.get_input_value("timber_model")
         if not timber_model:
+            for input in task.inputs:
+                print(f"Input '{input.name}' value: {input.value}")
             raise ValueError("Missing required 'timber_model' input or param.")
-
-        output_model = task.get_input_value("output_model") or task.get_param_value("output_model")
-        if not output_model:
-            base, ext = os.path.splitext(timber_model)
-            output_model = f"{base}_modified{ext}"
 
         bridge = self._bridge
 
         # ── Phase 1: import into Cadwork ─────────────────────────────────────
         # Cadwork Python API modules are only available inside the Cadwork
         # runtime, so we import them lazily here rather than at module level.
-        self.logger.info(f"Importing model into Cadwork: {timber_model}")
         if bridge:
             bridge.notify_import_started(task.id, task.type)
 
         from ct_to_cw import ImportController
 
+        self.logger.info(f"Importing model into Cadwork: {timber_model}")
         controller = ImportController()
-        controller.load_model_from_file(timber_model)
+        controller.load_model(timber_model)
         self.logger.info("Model imported. Waiting for user to finish in Cadwork.")
 
         # ── Phase 2: hand control to the user ────────────────────────────────
@@ -249,7 +469,7 @@ class CadworkAgent(Agent):
         # (headless / no-UI fallback: skip waiting and export immediately)
 
         # ── Phase 3: export modified model back to CT ─────────────────────────
-        self.logger.info(f"Exporting modified model to: {output_model}")
+        self.logger.info("Exporting modified model...")
         if bridge:
             bridge.notify_export_started()
 
@@ -257,7 +477,7 @@ class CadworkAgent(Agent):
 
         exporter = ExportController()
         exporter.load_model(timber_model)
-        exporter.export_model_to_file(output_model)
+        output_model = exporter.export_model()
         self.logger.info("Export complete.")
 
         # ── Phase 4: signal task done to UI ───────────────────────────────────
@@ -270,24 +490,34 @@ class CadworkAgent(Agent):
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+def show_error_popup_and_exit(title: str, message: str):
+    _ = QMessageBox.critical(None, title, message, defaultButton=QMessageBox.Ok)
+    sys.exit(1)
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
-    app = QApplication(sys.argv)
+cadworkMainWindow = uc.get_3d_hwnd()
+print("get_3d_hwnd", cadworkMainWindow)
 
-    # Bridge must exist before AgentLauncher is constructed because the
-    # launcher instantiates CadworkAgent in __init__ and the agent reads
-    # the module-level _UI_BRIDGE at that point.
-    _UI_BRIDGE = AgentUIBridge()
+if cadworkMainWindow < 0:
+    show_error_popup_and_exit("Error", "No window handle found")
 
-    window = AgentWindow(_UI_BRIDGE)
-    window.show()
+lParentWidget = QWidget.find(cadworkMainWindow)
+print("lParentWidget", lParentWidget)
 
-    launcher = AgentLauncher(broker_host="127.0.0.1", broker_port=1883)
-    launcher.start()  # non-blocking: just subscribes to MQTT topics
+if not lParentWidget:
+    show_error_popup_and_exit("Error", "Could not find cadwork main window.")
 
-    exit_code = app.exec()  # Qt event loop - MQTT callbacks run in their own threads
+# This must be at the module's root, otherwise the window briefly loads then disappears!!!
 
-    launcher.stop()
-    sys.exit(exit_code)
+# _launcher is created on demand when the user clicks Connect in the UI.
+_launcher: "AgentLauncher | None" = None
+
+# Bridge must exist before AgentLauncher is constructed because the
+# launcher instantiates CadworkAgent in __init__ and the agent reads
+# the module-level _UI_BRIDGE at that point.
+_UI_BRIDGE = AgentUIBridge()
+
+window = AgentWindow(_UI_BRIDGE)
+
+lParentWidget.addDockWidget(QtCore.Qt.RightDockWidgetArea, window)
+window.show()

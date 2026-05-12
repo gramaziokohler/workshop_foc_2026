@@ -1,4 +1,6 @@
 # requires: compas_timber==2.1.1-rc0
+import logging
+
 import cadwork
 from attribute_controller import is_beam
 from attribute_controller import set_name
@@ -30,8 +32,10 @@ from element_controller import cut_elements_with_miter
 from element_controller import cut_t_lap
 from element_controller import get_active_identifiable_element_ids
 
-from scripts.birdsmouth_joint import run as run_birdsmouth
-from scripts.cw_to_ct import sync_user_attributes
+from birdsmouth_joint import run as run_birdsmouth
+from cw_to_ct import sync_user_attributes
+
+LOG = logging.getLogger(__name__)
 
 
 def _apply_x_lap(beam_a, beam_b, scale, **kwargs):
@@ -88,10 +92,18 @@ class ImportController:
 
     def load_model_from_file(self, file_path):
         model = json_load(file_path)
+        self.load_model(model)
+        return model
+
+    def load_model(self, model):
+        LOG.debug(f"loading model: {model}")
+        LOG.debug("creating beams..")
         self.create_beams(model, self.scale)
+        LOG.debug("creating connections..")
         self.create_connections(model, self.scale)
         self.model = model
         self._delta.reset()
+        LOG.debug("model loaded")
         return model
 
     def clear_model(self):

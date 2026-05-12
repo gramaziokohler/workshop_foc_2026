@@ -94,11 +94,16 @@ class ExportController:
         self.model = None
         self.scale = scale
 
-    def load_model(self, file_path):
+    def load_model_from_file(self, file_path):
         """Load a COMPAS Timber model from JSON and rebuild the element map."""
         self.model = json_load(file_path)
         self._rebuild_element_map()
         return self.model
+
+    def load_model(self, model):
+        """Load a COMPAS Timber model and rebuild the element map."""
+        self.model = model
+        self._rebuild_element_map()
 
     def export_model_to_file(self, file_path):
         """Sync all cadwork data back into the model and export to JSON."""
@@ -108,6 +113,14 @@ class ExportController:
         sync_user_attributes(self.model)
         json_dump(self.model, file_path, pretty=True)
         print(f"  Exported to {file_path}")
+
+    def export_model(self):
+        """Sync all cadwork data back into the model and return it."""
+        self._sync_walls_and_groups()
+        self._sync_geometry()
+        self._handle_new_elements()
+        sync_user_attributes(self.model)
+        return self.model
 
     # -- element map ----------------------------------------------------------
 
