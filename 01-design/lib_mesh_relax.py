@@ -73,17 +73,11 @@ class MeshRelaxer:
         The goals for the relaxation.
     snap_to_surface : bool
         Whether to snap to the surface.
-    snap_to_surface : bool
-        Whether to snap to the surface.
     boundary_vertices : list[int]
         The boundary vertices.
     interior_vertices : list[int]
         The interior vertices.
 
-    Methods
-    -------
-    relax()
-        Relax the mesh.
     """
 
     def __init__(
@@ -106,7 +100,7 @@ class MeshRelaxer:
         self.assigned_vertices = set()
         self.step = 0
 
-        self.set_vertices_default_attributes
+        self.set_vertices_default_attributes()
 
     @property
     def boundary_vertices(self):
@@ -232,4 +226,6 @@ class MeshRelaxer:
                 continue
 
             # update the vertex position
-            self.mesh.vertex_attributes(vertex, "xyz", list(new_point))
+            self.mesh.vertex_attribute(vertex, "x", new_point.x)
+            self.mesh.vertex_attribute(vertex, "y", new_point.y)
+            self.mesh.vertex_attribute(vertex, "z", new_point.z)

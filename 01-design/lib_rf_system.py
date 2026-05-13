@@ -2,6 +2,7 @@ from compas.datastructures import Mesh
 from compas.geometry import Line
 from compas.geometry import Point
 from compas.geometry import Vector
+from compas.geometry import intersection_line_line
 
 
 class RFSystem:
@@ -149,6 +150,9 @@ class RFSystem:
             centerline.end += end_displacement
             self.mesh.edge_attribute(edge, "centerline", centerline)
 
+    # ==========================================================
+    # -------------------- A01 Challenge 02 --------------------
+
     def eccentrize_centerlines_attractor_curve(self, curve, factor: float) -> None:
         """Eccentrize centerlines base on the distance to an attractor curve."""
         for edge in self.mesh.edges():
@@ -196,4 +200,52 @@ class RFSystem:
             elif not extend_start and extend_end:
                 centerline.end += direction * extension
 
+            self.mesh.edge_attribute(edge, "centerline", centerline)
+
+    # --------------------------------------------------------------------------
+    # A03 Adjust centerlines optimization
+    # --------------------------------------------------------------------------
+
+    def compute_spring_forces(self, damping):
+        for edge in self.mesh.edges():
+            if self.mesh.is_edge_on_boundary(edge):
+                continue
+            # get the data of the edge
+            centerline: Line = self.mesh.edge_attribute(edge, "centerline")
+            next_edge = self.mesh.edge_attribute(edge, "next_edge")
+            prev_edge = self.mesh.edge_attribute(edge, "prev_edge")
+            next_centerline: Line = self.mesh.edge_attribute(next_edge, "centerline")
+            prev_centerline: Line = self.mesh.edge_attribute(prev_edge, "centerline")
+
+            # compute the vector to the end target
+            _, target_end_point = intersection_line_line(centerline, next_centerline)
+            vector_to_end_target = Vector.from_start_end(centerline.end, Point(*target_end_point)) * damping
+            self.mesh.edge_attribute(edge, "vector_to_end_target", vector_to_end_target)
+
+            # compute the vector to the start target
+            _, target_start_point = intersection_line_line(centerline, prev_centerline)
+            vector_to_start_target = Vector.from_start_end(centerline.start, Point(*target_start_point)) * damping
+            self.mesh.edge_attribute(edge, "vector_to_start_target", vector_to_start_target)
+
+    def apply_spring_forces(self):
+        for edge in self.mesh.edges():
+            if self.mesh.is_edge_on_boundary(edge):
+                continue
+
+            centerline: Line = self.mesh.edge_attribute(edge, "centerline")
+            vector_to_end_target = self.mesh.edge_attribute(edge, "vector_to_end_target")
+            vector_to_start_target = self.mesh.edge_attribute(edge, "vector_to_start_target")
+            centerline.start += vector_to_start_target
+            centerline.end += vector_to_end_target + vector_to_start_target.flipped()
+            self.mesh.edge_attribute(edge, "centerline", centerline)
+
+    def snap_centerlines_to_surface(self, goals):
+        if not goals.target_surface:
+            return
+        for edge in self.mesh.edges():
+            centerline = self.mesh.edge_attribute(edge, "centerline")
+            new_start = goals.target_surface.closest_point(centerline.start)
+            new_end = goals.target_surface.closest_point(centerline.end)
+            centerline.start = new_start
+            centerline.end = new_end
             self.mesh.edge_attribute(edge, "centerline", centerline)

@@ -2,6 +2,7 @@ from compas.datastructures import Mesh
 from compas.geometry import Point
 from compas.geometry import Vector
 from compas.geometry import closest_point_on_line
+from compas.geometry import closest_point_on_polyline
 from compas.geometry import distance_point_line
 
 # ---- MESH MODIFIERS ---- #
@@ -22,9 +23,7 @@ class SnapVertexToPoint:
         self.type = "mesh_modifier"
 
     def apply(self, relaxer, mesh):
-        mesh.vertex_attribute(self.vertex, "x", self.point.x)
-        mesh.vertex_attribute(self.vertex, "y", self.point.y)
-        mesh.vertex_attribute(self.vertex, "z", self.point.z)
+        mesh.vertex_attributes(self.vertex, "xyz", list(self.point))
         mesh.vertex_attribute(self.vertex, "fixed", True)
         return mesh
 
@@ -70,19 +69,9 @@ class MergeFaces:
 
 
 class AttractorPointModifier:
-    """Force modifier that attracts interior vertices toward a specified point.
+    """Force modifier that attracts interior vertices toward a specified point."""
 
-    Attributes:
-        point (compas.geometry.Point): attractor position.
-        attraction_force (compas.geometry.Vector): base attraction force vector.
-        type (str): modifier type identifier ("force_modifier").
-
-    Behavior:
-        For each interior vertex, computes a direction to the attractor and
-        accumulates an attraction force into the vertex 'force' attribute.
-    """
-
-    def __init__(self, point: Point, force: Vector):
+    def __init__(self, point: Point, force: float):
         self.point = point
         self.attraction_force = force
         self.type = "force_modifier"
@@ -121,6 +110,44 @@ class DirectionalForce:
             directional_force = self.direction * self.force
             force += directional_force
             mesh.vertex_attribute(vertex, "force", force)
+        return mesh
+
+
+class PullBoundaryToOutline:
+    """Force modifier that pulls boundary vertices towards the boundary polyline.
+
+    Attributes:
+        strength (float): multiplier for the pulling force.
+        type (str): modifier type identifier ("force_modifier").
+
+    Behavior:
+        For each boundary vertex, finds the closest point on the relaxer's boundary
+        polyline and applies a force towards it.
+    """
+
+    def __init__(self, strength: float):
+        self.strength = strength
+        self.type = "force_modifier"
+
+    def apply(self, relaxer, mesh):
+        if not relaxer.boundary:
+            return mesh
+
+        for vertex in relaxer.boundary_vertices:
+            # Skip if vertex is already fixed/assigned
+            if vertex in relaxer.assigned_vertices:
+                continue
+
+            vertex_point = mesh.vertex_point(vertex)
+            closest_point = closest_point_on_polyline(vertex_point, relaxer.boundary)
+            pull_direction = Vector.from_start_end(vertex_point, closest_point)
+
+            if pull_direction.length > 1e-6:
+                pull_force = pull_direction * self.strength
+                force = mesh.vertex_attribute(vertex, "force")
+                force += pull_force
+                mesh.vertex_attribute(vertex, "force", force)
+
         return mesh
 
 
@@ -202,6 +229,22 @@ class SameBorderEdgeLength:
         return mesh
 
 
+class FixedBoundaryVertices:
+    """Modifier that marks all boundary vertices as fixed (prevents movement).
+
+    Attributes:
+        type (str): modifier type identifier ("mesh_modifier").
+    """
+
+    def __init__(self):
+        self.type = "mesh_modifier"
+
+    def apply(self, relaxer, mesh):
+        for vertex in relaxer.boundary_vertices:
+            mesh.vertex_attribute(vertex, "fixed", True)
+        return mesh
+
+
 class IncreaseForceAroundBorders:
     """Increase forces on interior vertices adjacent to boundary vertices.
 
@@ -224,7 +267,7 @@ class IncreaseForceAroundBorders:
             force = mesh.vertex_attribute(vertex, "force")
             for nvx in neighboring_vertex:
                 if mesh.is_vertex_on_boundary(nvx):
-                    boundary_force = mesh.edge_vector((vertex, nvx)).unitized() * self.strength * 100
+                    boundary_force = mesh.edge_vector((vertex, nvx)).unitized() * self.strength * 0.0001
                     force += boundary_force
             mesh.vertex_attribute(vertex, "force", force)
         return mesh
@@ -306,94 +349,131 @@ class BoundaryEdgeLengthOptimizer:
         self.K = K
         self.type = "force_modifier"
 
-    def _calculate_average_boundary_length(self, relaxer, mesh):
-        total_len = 0.0
-        cnt = 0
-        bvs = relaxer.boundary_vertices
-        for v in bvs:
-            for nb in mesh.vertex_neighbors(v):
-                if nb in bvs and v < nb:
-                    total_len += mesh.edge_vector((v, nb)).length
-                    cnt += 1
-        return total_len / cnt if cnt else 0.0
-
-    def _identify_corner_vertices(self, relaxer, mesh):
-        corner_vertices = set()
-        if not (hasattr(relaxer, "corners") and relaxer.corners):
-            return corner_vertices
-
-        for corner in relaxer.corners:
-            if isinstance(corner, int):
-                if corner in relaxer.boundary_vertices:
-                    corner_vertices.add(corner)
-                continue
-
-            try:
-                closest_vertex = min(relaxer.boundary_vertices, key=lambda v: mesh.vertex_point(v).distance_to_point(corner))
-                corner_vertices.add(closest_vertex)
-            except (ValueError, TypeError):
-                pass
-        return corner_vertices
-
-    def _get_boundary_tangent(self, vertex, relaxer, mesh):
-        pts = relaxer.goals.target_boundary.points
-        p = mesh.vertex_point(vertex)
-        best_dist = float("inf")
-        best_tangent = None
-
-        for i in range(len(pts) - 1):
-            a = pts[i]
-            b = pts[i + 1]
-            ab = Vector.from_start_end(a, b)
-            denom = ab.dot(ab)
-            if denom == 0:
-                continue
-
-            ap = Vector.from_start_end(a, p)
-            t = ap.dot(ab) / denom
-            t = max(0, min(1, t))
-
-            closest = Point(a.x + ab.x * t, a.y + ab.y * t, a.z + ab.z * t)
-            d = p.distance_to_point(closest)
-
-            if d < best_dist:
-                best_dist = d
-                best_tangent = ab.unitized()
-
-        if best_tangent is None:
-            return Vector(1, 0, 0)
-        return best_tangent
-
     def apply(self, relaxer, mesh) -> Mesh:
+        # determine the target length (average boundary edge length if not given)
         target = self.target_edge_length
         if target is None:
-            target = self._calculate_average_boundary_length(relaxer, mesh)
-            if target == 0:
+            total = 0.0
+            count = 0
+            bvs = relaxer.boundary_vertices
+            for v in bvs:
+                for nb in mesh.vertex_neighbors(v):
+                    if nb in bvs and v < nb:
+                        total += mesh.edge_vector((v, nb)).length
+                        count += 1
+            if count > 0:
+                target = total / count
+            else:
                 return mesh
 
-        corner_vertices = self._identify_corner_vertices(relaxer, mesh)
+        # determine which boundary vertices correspond to corners and skip them
+        corner_vertices = set()
+        if hasattr(relaxer, "corners") and relaxer.corners:
+            # compute a tolerance from the average boundary edge length
+            try:
+                bvs = relaxer.boundary_vertices
+                # compute average boundary edge length
+                total_len = 0.0
+                cnt = 0
+                for v in bvs:
+                    for nb in mesh.vertex_neighbors(v):
+                        if nb in bvs and v < nb:
+                            total_len += mesh.edge_vector((v, nb)).length
+                            cnt += 1
+                avg_len = total_len / cnt if cnt else 0.0
+                tol = max(1e-6, avg_len * 0.001)
+            except Exception:
+                tol = 1e-6
 
+            for corner in relaxer.corners:
+                # if corners are passed as vertex indices
+                if isinstance(corner, int):
+                    if corner in relaxer.boundary_vertices:
+                        corner_vertices.add(corner)
+                    continue
+
+                # otherwise assume a Point-like object: find the closest boundary vertex
+                try:
+                    closest_vertex = min(relaxer.boundary_vertices, key=lambda v: mesh.vertex_point(v).distance_to_point(corner))
+                    dist = mesh.vertex_point(closest_vertex).distance_to_point(corner)
+                    if dist <= tol:
+                        corner_vertices.add(closest_vertex)
+                    else:
+                        # still add closest vertex to be conservative
+                        corner_vertices.add(closest_vertex)
+                except ValueError:
+                    pass
+
+        # helper: find local boundary tangent (unit vector) for a boundary vertex
+        def _boundary_tangent_at_vertex(v_idx):
+            pts = relaxer.goals.target_boundary.points
+            p = mesh.vertex_point(v_idx)
+            best_dist = float("inf")
+            best_tangent = None
+            for i in range(len(pts) - 1):
+                a = pts[i]
+                b = pts[i + 1]
+                ab = Vector.from_start_end(a, b)
+                denom = ab.dot(ab)
+                if denom == 0:
+                    continue
+                ap = Vector.from_start_end(a, p)
+                t = ap.dot(ab) / denom
+                if t < 0:
+                    t = 0
+                elif t > 1:
+                    t = 1
+                closest = Point(a.x + ab.x * t, a.y + ab.y * t, a.z + ab.z * t)
+                d = p.distance_to_point(closest)
+                if d < best_dist:
+                    best_dist = d
+                    if ab.length > 0:
+                        best_tangent = ab.unitized()
+            if best_tangent is None:
+                return Vector(1, 0, 0)
+            return best_tangent
+
+        # apply spring-like forces only to boundary vertices, constrained along boundary tangent
         for v in relaxer.boundary_vertices:
+            # do not modify vertices that are designated as corners
             if v in corner_vertices:
                 continue
+            force = mesh.vertex_attribute(v, "force")
+            if force is None:
+                force = Vector(0, 0, 0)
 
-            force = mesh.vertex_attribute(v, "force") or Vector(0, 0, 0)
-            tangent = self._get_boundary_tangent(v, relaxer, mesh)
+            tangent = _boundary_tangent_at_vertex(v)
 
             for nb in mesh.vertex_neighbors(v):
                 if nb not in relaxer.boundary_vertices:
                     continue
-
                 edge_vector = mesh.edge_vector((v, nb))
                 edge_length = edge_vector.length
                 length_diff = edge_length - target
-
-                spring_force = edge_vector.unitized() * (self.K * length_diff)
-
-                # project spring force onto the local boundary tangent
-                spring_force_proj = tangent * spring_force.dot(tangent)
+                edge_dir = edge_vector.unitized()
+                spring_force = edge_dir * (self.K * length_diff)
+                # project spring force onto the local boundary tangent so the
+                # vertex moves along the brep edge rather than off-surface
+                projected_mag = spring_force.dot(tangent)
+                spring_force_proj = tangent * projected_mag
                 force += spring_force_proj
 
             mesh.vertex_attribute(v, "force", force)
 
+        return mesh
+
+
+class FixedBoundaryVertices:
+    """Modifier that marks all boundary vertices as fixed (prevents movement).
+
+    Attributes:
+        type (str): modifier type identifier ("mesh_modifier").
+    """
+
+    def __init__(self):
+        self.type = "mesh_modifier"
+
+    def apply(self, relaxer, mesh):
+        for vertex in relaxer.boundary_vertices:
+            mesh.vertex_attribute(vertex, "fixed", True)
         return mesh
