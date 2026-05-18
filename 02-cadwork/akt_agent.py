@@ -27,8 +27,8 @@ import utility_controller as uc
 from antikythera.models import Task
 from antikythera_agents import Agent, agent, tool
 from antikythera_agents.launcher import AgentLauncher
-from PyQt5 import QtCore
-from PyQt5.QtCore import (
+from PyQt6 import QtCore
+from PyQt6.QtCore import (
     QEventLoop,
     QObject,
     QSocketNotifier,
@@ -36,7 +36,7 @@ from PyQt5.QtCore import (
     QTimer,
     pyqtSignal,
 )
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -133,10 +133,10 @@ class MqttLoopManager(QObject):
 
         fd = client.socket().fileno()
 
-        self._read_notifier = QSocketNotifier(fd, QSocketNotifier.Read, self)
+        self._read_notifier = QSocketNotifier(fd, QSocketNotifier.Type.Read, self)
         self._read_notifier.activated.connect(self._on_readable)
 
-        self._write_notifier = QSocketNotifier(fd, QSocketNotifier.Write, self)
+        self._write_notifier = QSocketNotifier(fd, QSocketNotifier.Type.Write, self)
         self._write_notifier.activated.connect(self._on_writable)
         self._write_notifier.setEnabled(False)  # enabled only when paho has data to send
 
@@ -253,9 +253,9 @@ class AgentWindow(QDockWidget):
         self._toggle_btn.setText("Connection Settings")
         self._toggle_btn.setCheckable(True)
         self._toggle_btn.setChecked(True)
-        self._toggle_btn.setArrowType(QtCore.Qt.DownArrow)
-        self._toggle_btn.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        self._toggle_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self._toggle_btn.setArrowType(QtCore.Qt.ArrowType.DownArrow)
+        self._toggle_btn.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self._toggle_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._toggle_btn.setStyleSheet("font-size: 12px; font-weight: bold; text-align: left;")
         self._toggle_btn.toggled.connect(self._on_panel_toggled)
         layout.addWidget(self._toggle_btn)
@@ -323,7 +323,7 @@ class AgentWindow(QDockWidget):
 
     def _on_panel_toggled(self, checked: bool) -> None:
         self._conn_panel.setVisible(checked)
-        self._toggle_btn.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
+        self._toggle_btn.setArrowType(QtCore.Qt.ArrowType.DownArrow if checked else QtCore.Qt.ArrowType.RightArrow)
 
     def _on_connect_clicked(self) -> None:
         global _launcher
@@ -352,7 +352,7 @@ class AgentWindow(QDockWidget):
         # Block the main thread with a local event loop so Qt keeps processing
         # events (and the QThread keeps making progress) until connection
         # succeeds or fails.
-        loop.exec_()
+        loop.exec()
 
     def _on_connected(self) -> None:
         self._dot.setStyleSheet("color: #22c55e; font-size: 20px;")
@@ -491,7 +491,7 @@ class CadworkAgent(Agent):
 # Entry point
 # ---------------------------------------------------------------------------
 def show_error_popup_and_exit(title: str, message: str):
-    _ = QMessageBox.critical(None, title, message, defaultButton=QMessageBox.Ok)
+    _ = QMessageBox.critical(None, title, message, defaultButton=QMessageBox.StandardButton.Ok)
     sys.exit(1)
 
 
@@ -519,5 +519,5 @@ _UI_BRIDGE = AgentUIBridge()
 
 window = AgentWindow(_UI_BRIDGE)
 
-lParentWidget.addDockWidget(QtCore.Qt.RightDockWidgetArea, window)
+lParentWidget.addDockWidget(QtCore.Qt.DockWidgetArea.RightDockWidgetArea, window)
 window.show()

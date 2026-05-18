@@ -1,10 +1,45 @@
+import sys
 from pathlib import Path
 
-import menu_controller
 import utility_controller
-from scripts.controller import WorkshopController
 
-PLUGIN_ROOT = Path(__file__).absolute().parent
+# Cadwork copies the executed script into Temp\cw_script.py and runs it from
+# there, so __file__ is unreliable. Resolve the plugin root via Cadwork's API.
+# This block is intentionally duplicated in workshop_foc_2026.py: a bootstrap
+# that fixes sys.path cannot itself live in a shared importable module (that
+# would need sys.path already fixed). It is idempotent and guarded, so it is
+# safe whether this file is the entry point or imported by workshop_foc_2026.py.
+_PLUGIN_FOLDER_NAME = "workshop_foc_2026"
+
+
+def _resolve_plugin_root():
+    candidates = []
+    try:
+        plugin_path = utility_controller.get_plugin_path()
+        if plugin_path:
+            candidates.append(Path(plugin_path))
+        userprofil = utility_controller.get_3d_userprofil_path()
+        if userprofil:
+            candidates.append(Path(userprofil) / "API.x64" / _PLUGIN_FOLDER_NAME)
+    except Exception:
+        pass  # not running inside Cadwork
+
+    candidates.append(Path(__file__).absolute().parent)
+
+    for c in candidates:
+        if (c / "workshop_foc_2026_2.py").is_file():
+            return c
+    return candidates[0]
+
+
+PLUGIN_ROOT = _resolve_plugin_root()
+for _p in (PLUGIN_ROOT / ".venv" / "Lib" / "site-packages", PLUGIN_ROOT, PLUGIN_ROOT / "02-cadwork"):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
+import menu_controller
+from controller import WorkshopController
+
 DEFAULT_DIR = str(PLUGIN_ROOT / "temp")
 
 

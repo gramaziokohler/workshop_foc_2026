@@ -1,5 +1,19 @@
-from scripts.ct_to_cw import ImportController
-from scripts.cw_to_ct import ExportController
+import sys
+from pathlib import Path
+
+# Self-bootstrap sys.path so this module works whether it is imported via the
+# workshop_foc_2026.py plugin entry or launched directly by Cadwork (which runs
+# scripts from a temp dir, leaving 02-cadwork/ off sys.path). Guarded inserts
+# make this a no-op when the path is already set up.
+_HERE = Path(__file__).absolute().parent  # .../02-cadwork
+_SITE_PACKAGES = _HERE.parent / ".venv" / "Lib" / "site-packages"
+
+for _p in (_SITE_PACKAGES, _HERE):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
+from ct_to_cw import ImportController
+from cw_to_ct import ExportController
 import utility_controller as uc
 
 
