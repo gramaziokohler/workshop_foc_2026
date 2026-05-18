@@ -259,6 +259,21 @@ class FabWindow(QMainWindow):
         self._finish_btn.setEnabled(False)
         self.bridge.user_confirmed()
 
+    def _on_generate_clicked(self):
+        selected_beams = ...  # get from the UI
+        self._hops_filepaths = self.easy_hops.generate_hops(selected_beams)
+
+    def _on_start_sim(self):
+        selected_beam = ...  # geete from UI
+        hops_filepath = self._hops_filepaths[selected_beam.guid]
+        self.easy_hops.start_sim(hops_filepath, selected_beam)
+
+    def _on_start_milling(self):
+        selected_beam = ...  # geete from UI
+        hops_filepath = self._hops_filepaths[selected_beam.guid]
+        self.easy_hops.execute(hops_filepath, selected_beam)
+        self.bridge.user_confirmed()
+
 
 # ---------------------------------------------------------------------------
 # Antikythera agent
@@ -303,9 +318,13 @@ class FabricationAgent(Agent):
         bridge = self._bridge
         if bridge:
             bridge.model_received.emit(beam_count)
-            bridge.wait_for_user_confirmation()
+            bridge.wait_for_user_confirmation()  # this is blocking until user is ready to mill
 
-        return {"beam_count": beam_count}
+        ...  # GET THE NEXT HOPS FILEPATH, READ IT, GET THE CONTENTS
+        hops_filepath = ...
+        should_mill = ...
+
+        return {"hops_filepath": hops_filepath, "should_mill": should_mill}
 
 
 # ---------------------------------------------------------------------------
