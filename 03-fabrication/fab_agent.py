@@ -13,6 +13,7 @@ from antikythera_agents import Agent
 from antikythera_agents import agent
 from antikythera_agents import tool
 from antikythera_agents.launcher import AgentLauncher
+from easyhops_lib import EasyHops
 from PyQt6 import QtCore
 from PyQt6.QtCore import QObject
 from PyQt6.QtCore import pyqtSignal
@@ -107,6 +108,8 @@ class FabWindow(QMainWindow):
     def __init__(self, bridge: AgentUIBridge):
         super().__init__()
         self.bridge = bridge
+        self.easy_hops = EasyHops()
+        self._hops_filepaths: dict = {}
         self._build_ui()
         bridge.connected.connect(self._on_connected)
         bridge.connection_error.connect(self._on_connection_error)
@@ -320,11 +323,10 @@ class FabricationAgent(Agent):
             bridge.model_received.emit(beam_count)
             bridge.wait_for_user_confirmation()  # this is blocking until user is ready to mill
 
-        ...  # GET THE NEXT HOPS FILEPATH, READ IT, GET THE CONTENTS
-        hops_filepath = ...
-        should_mill = ...
-
-        return {"hops_filepath": hops_filepath, "should_mill": should_mill}
+        # HOP files are generated when the user clicks Generate in the UI.
+        # Here we just surface the paths so the orchestrator can act on them.
+        hops_filepaths = list(bridge._hops_filepaths.values()) if bridge else []
+        return {"hops_filepaths": hops_filepaths}
 
 
 # ---------------------------------------------------------------------------
