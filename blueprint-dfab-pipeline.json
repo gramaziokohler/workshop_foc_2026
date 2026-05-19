@@ -52,7 +52,7 @@
     {
       "id": "fabrication",
       "type": "foc.fabrication",
-      "description": "Fabrication task using the CNC",
+      "description": "Fabrication post-processing of BTLx -> HOPS",
       "inputs": [
         {
           "name": "timber_model"
@@ -70,6 +70,32 @@
       ]
     },
     {
+      "id": "cnc-milling",
+      "type": "foc.cnc",
+      "description": "Fabrication task using the CNC",
+      "inputs": [
+        {
+          "name": "hops_file"
+        },
+        {
+          "name": "filename"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "done"
+        },
+        {
+          "name": "local_path"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "fabrication"
+        }
+      ]
+    },
+    {
       "id": "end",
       "type": "system.end",
       "outputs": [
@@ -79,7 +105,7 @@
       ],
       "depends_on": [
         {
-          "id": "fabrication"
+          "id": "cnc-milling"
         }
       ]
     }
