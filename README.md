@@ -25,7 +25,7 @@ uv sync
 
 ### Design
 
-The `01-design` folder contains the source code and the Grasshopper design file (`design_phase.ghx`). This file demonstrates a workflow for:
+The `01-design` folder contains the source code and the Grasshopper design file (`01_designer.ghx`). This file demonstrates a workflow for:
 *   Simple mesh generation
 *   Mesh relaxation
 *   Timber model creation
@@ -52,17 +52,17 @@ Participants gain practical understanding of COMPAS Timber design, AI integratio
 
 ## Agenda
 
-| Time | Topic/Task | Notes |
-| :---- | :---- | :---- |
-| 09:00-10:00 | Intro / Installations | |
-| 10:00-11:00 | COMPAS Timber | |
-| 11:00-12:00 | Antikythera | |
-| 12:00-13:00 | Lunch | |
-| 13:00-14:00 | Cadwork AI step | Intro to AI in CAD for timber design |
-| 14:00-15:00 | Cadwork AI step | Showcase of Cadwork AI |
-| 15:00-16:00 | Fabrication | |
-| 16:00-17:00 | Fabrication | |
-| 17:00+ | Apero | |
+| Time | Topic/Task |
+| :---- | :---- |
+| 09:00-09:30 | Intro workshop team & participants |
+| 09:30-10:00 | COMPAS Timber |
+| 10:00-11:00 | Installation + example files |
+| 11:00-12:00 | Antikythera |
+| 12:00-13:00 | Lunch |
+| 13:00-14:00 | Cadwork + AI in timber construction |
+| 14:00-15:00 | Pipeline demo end-to-end | 
+| 15:00-17:00 | Fabrication |
+| 18:00 | Apero at EMPA |
 
 ## Overview of the pipeline
 
