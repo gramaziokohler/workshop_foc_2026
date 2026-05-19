@@ -20,7 +20,8 @@ dependencies = [
     # to the 6.8 line — do NOT bump to match the latest Qt.
     "pyqt6==6.8.1",
     "pyqt6-qt6==6.8.2",
-    "antikythera-sdk==0.3.0"
+    "antikythera-sdk==0.3.0",
+    "easyhops @ git+https://github.com/MAS-dfab/easyhops.git@main"
 ]
 
 [dependency-groups]
