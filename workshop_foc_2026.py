@@ -4,10 +4,40 @@
 import sys
 from pathlib import Path
 
-PLUGIN_ROOT = Path(__file__).absolute().parent
-SITE_PACKAGES = PLUGIN_ROOT / ".venv" / "Lib" / "site-packages"
+# Cadwork copies the executed script into a temp file (Temp\cw_script.py) and
+# runs it from there, so __file__ does NOT point to the real plugin folder.
+# Resolve the plugin root via Cadwork's API instead, falling back to __file__
+# only when running outside Cadwork (e.g. local tooling/tests).
+_PLUGIN_FOLDER_NAME = "workshop_foc_2026"
 
-for p in (SITE_PACKAGES, PLUGIN_ROOT):
+
+def _resolve_plugin_root():
+    candidates = []
+    try:
+        import utility_controller as _uc
+
+        plugin_path = _uc.get_plugin_path()
+        if plugin_path:
+            candidates.append(Path(plugin_path))
+        userprofil = _uc.get_3d_userprofil_path()
+        if userprofil:
+            candidates.append(Path(userprofil) / "API.x64" / _PLUGIN_FOLDER_NAME)
+    except Exception:
+        pass  # not running inside Cadwork
+
+    candidates.append(Path(__file__).absolute().parent)
+
+    for c in candidates:
+        if (c / "workshop_foc_2026_2.py").is_file():
+            return c
+    return candidates[0]
+
+
+PLUGIN_ROOT = _resolve_plugin_root()
+SITE_PACKAGES = PLUGIN_ROOT / ".venv" / "Lib" / "site-packages"
+CADWORK_DIR = PLUGIN_ROOT / "02-cadwork"
+
+for p in (SITE_PACKAGES, PLUGIN_ROOT, CADWORK_DIR):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
@@ -21,7 +51,9 @@ for name in _stale:
     importlib.reload(sys.modules[name])
 
 # Traditional imports from here ..
-from workshop_foc_2026_2 import run_from_dialog
-
-if __name__ == "__main__":
-    run_from_dialog()
+# akt_agent builds and shows the "Cadwork Agent" dock widget at *module
+# import time*. Its window/launcher references must live as module-level
+# globals — see the comment in akt_agent.py: wrapping them in a function
+# lets Qt garbage-collect the window. So importing the module IS the entry
+# point; there is no function to call afterwards.
+import akt_agent  # noqa: F401

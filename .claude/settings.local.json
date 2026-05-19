@@ -27,7 +27,9 @@
       "mcp__cadwork3d_aibridge__execute_script",
       "Bash(python3:*)",
       "Bash(find /c/cadwork_repos/workshop_foc_2026 -name \"*.py\" -not -path \"*/.venv/*\" -type f -exec wc -l {} +)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Read(//c/Users/Public/Documents/cadwork/USERPROFIL_2026/3d/API.x64/workshop_foc_2026/scripts//**)",
+      "Read(//c/Users/Public/Documents/cadwork/USERPROFIL_2026/3d/API.x64/workshop_foc_2026//**)"
     ]
   }
 }
