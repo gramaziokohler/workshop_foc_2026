@@ -231,6 +231,14 @@ wheels = [
 ]
 
 [[package]]
+name = "easyhops"
+version = "0.1.0"
+source = { git = "https://github.com/MAS-dfab/easyhops.git?rev=main#cb9c2d84261ce1a4a1a9fd6a26c8da2a032741cc" }
+dependencies = [
+    { name = "compas" },
+]
+
+[[package]]
 name = "gh-io-stubs"
 version = "7.7.21140"
 source = { registry = "https://pypi.org/simple" }
@@ -719,6 +727,7 @@ dependencies = [
     { name = "compas-timber" },
     { name = "cwapi3d" },
     { name = "cwmath" },
+    { name = "easyhops" },
     { name = "pyqt6" },
     { name = "pyqt6-qt6" },
     { name = "pythonnet" },
@@ -741,6 +750,7 @@ requires-dist = [
     { name = "compas-timber", specifier = "==2.1.1rc1" },
     { name = "cwapi3d", specifier = ">=32.443.5" },
     { name = "cwmath", specifier = ">=0.0.9" },
+    { name = "easyhops", git = "https://github.com/MAS-dfab/easyhops.git?rev=main" },
     { name = "pyqt6", specifier = "==6.8.1" },
     { name = "pyqt6-qt6", specifier = "==6.8.2" },
     { name = "pythonnet" },
