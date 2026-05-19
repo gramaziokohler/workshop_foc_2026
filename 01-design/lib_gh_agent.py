@@ -121,7 +121,7 @@ def run_agent(
 def stop_agent(worker):
     """Dispose callback for BackgroundWorker.stop_instance_by_component."""
     LOG.debug("stop_agent called")
-    launcher = worker.launcher
+    launcher = getattr(worker, "launcher")
     if launcher:
         try:
             launcher.stop()
