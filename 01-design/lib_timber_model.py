@@ -66,7 +66,7 @@ class TimberModelCreator:
     3. SOLVING: Calculating the geometry of those connections (Processing).
     """
 
-    def __init__(self, rf_system: RFSystem, beam_width: float = 0.08, beam_height: float = 0.10, tolerance: float = 0.02):
+    def __init__(self, rf_system: RFSystem, beam_width: float = 0.06, beam_height: float = 0.06, tolerance: float = 0.02):
         self.rf_system = rf_system
         self.timber_model = TimberModel()
         self.beam_width = beam_width
@@ -150,7 +150,7 @@ class TimberModelCreator:
 
         # Case 4: MEETING (T-Shape)
         # The default rule for topological T-joints (one beam ends against the face of another)
-        self._rules.append(TopologyRule(topology_type=JointTopology.TOPO_T, joint_type=TBirdsmouthJoint, max_distance=self.tolerance))
+        self._rules.append(TopologyRule(topology_type=JointTopology.TOPO_T, joint_type=TButtJoint, max_distance=self.tolerance))
 
     def _apply_rules(self, process_joinery: bool) -> None:
         """
