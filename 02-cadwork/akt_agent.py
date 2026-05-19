@@ -16,6 +16,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
+import json
 import os
 import socket
 import sys
@@ -51,6 +52,34 @@ from PyQt6.QtWidgets import (
 )
 
 LOG = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Broker connection cache
+# ---------------------------------------------------------------------------
+
+_BROKER_CACHE_FILE = PLUGIN_ROOT / ".broker_cache.json"
+_DEFAULT_HOST = "192.168.1.100"
+_DEFAULT_PORT = 1883
+
+
+def _load_broker_cache() -> tuple[str, int]:
+    """Return (host, port) from cache file, or defaults if not found."""
+    try:
+        data = json.loads(_BROKER_CACHE_FILE.read_text())
+        host = str(data.get("host", _DEFAULT_HOST))
+        port = int(data.get("port", _DEFAULT_PORT))
+        return host, port
+    except Exception:
+        return _DEFAULT_HOST, _DEFAULT_PORT
+
+
+def _save_broker_cache(host: str, port: int) -> None:
+    """Persist the last successfully used broker host and port."""
+    try:
+        _BROKER_CACHE_FILE.write_text(json.dumps({"host": host, "port": port}))
+    except Exception as exc:
+        LOG.warning(f"Could not save broker cache: {exc}")
+
 
 # Shared bridge – must be set before AgentLauncher is constructed so that
 # CadworkAgent (instantiated inside the launcher) can reference it.
@@ -131,7 +160,10 @@ class MqttLoopManager(QObject):
         # Take over from paho's internal threading.Thread.
         client.loop_stop()
 
-        fd = client.socket().fileno()
+        sock = client.socket()
+        if sock is None:
+            raise RuntimeError("MQTT socket not available after loop_stop")
+        fd = sock.fileno()
 
         self._read_notifier = QSocketNotifier(fd, QSocketNotifier.Type.Read, self)
         self._read_notifier.activated.connect(self._on_readable)
@@ -266,14 +298,27 @@ class AgentWindow(QDockWidget):
         conn_layout.setContentsMargins(8, 8, 8, 8)
         conn_layout.setSpacing(8)
 
+        _cached_host, _cached_port = _load_broker_cache()
+
         ip_row = QHBoxLayout()
         ip_row.addWidget(QLabel("Broker IP:"))
         self._ip_input = QLineEdit()
         self._ip_input.setPlaceholderText("e.g. 192.168.1.100")
-        self._ip_input.setText("172.20.10.12")
+        self._ip_input.setText(_cached_host)
         self._ip_input.returnPressed.connect(self._on_connect_clicked)
         ip_row.addWidget(self._ip_input)
         conn_layout.addLayout(ip_row)
+
+        port_row = QHBoxLayout()
+        port_row.addWidget(QLabel("Port:"))
+        self._port_input = QLineEdit()
+        self._port_input.setPlaceholderText("e.g. 1883")
+        self._port_input.setText(str(_cached_port))
+        self._port_input.setMaximumWidth(80)
+        self._port_input.returnPressed.connect(self._on_connect_clicked)
+        port_row.addWidget(self._port_input)
+        port_row.addStretch()
+        conn_layout.addLayout(port_row)
 
         self._connect_btn = QPushButton("Connect")
         self._connect_btn.setStyleSheet(_BTN_STYLE)
@@ -333,13 +378,22 @@ class AgentWindow(QDockWidget):
             self._conn_error_lbl.show()
             return
 
+        try:
+            port = int(self._port_input.text().strip())
+            if not (1 <= port <= 65535):
+                raise ValueError()
+        except ValueError:
+            self._conn_error_lbl.setText("Please enter a valid port number (1–65535).")
+            self._conn_error_lbl.show()
+            return
+
         self._connect_btn.setEnabled(False)
         self._conn_error_lbl.hide()
         self._dot.setStyleSheet("color: #f59e0b; font-size: 20px;")
         self._status_lbl.setText("Connecting…")
 
-        LOG.info(f"Attempting to connect to broker: {host}:1883")
-        self._connect_worker = ConnectWorker(host, port=1883)
+        LOG.info(f"Attempting to connect to broker: {host}:{port}")
+        self._connect_worker = ConnectWorker(host, port=port)
 
         loop = QEventLoop()
         self._connect_worker.succeeded.connect(loop.quit)
@@ -355,6 +409,7 @@ class AgentWindow(QDockWidget):
         loop.exec()
 
     def _on_connected(self) -> None:
+        _save_broker_cache(self._ip_input.text().strip(), int(self._port_input.text().strip()))
         self._dot.setStyleSheet("color: #22c55e; font-size: 20px;")
         self._status_lbl.setText("Online")
         self._task_lbl.setText("Waiting for tasks…")
@@ -362,7 +417,9 @@ class AgentWindow(QDockWidget):
         self._toggle_btn.setChecked(False)
 
         # Hand paho's network I/O to Qt's event loop via socket notifiers.
-        self._mqtt_loop = MqttLoopManager(_launcher.transport.client, parent=self)
+        # The socket may not be ready immediately after AgentLauncher.start(),
+        # so defer until paho has completed the TCP handshake.
+        self._start_mqtt_loop()
 
         # AgentLauncher executes tasks in threading.Threads which only get the
         # GIL when the main thread yields it.  A periodic sleep(0) from a
@@ -371,6 +428,23 @@ class AgentWindow(QDockWidget):
         self._gil_yield_timer.setInterval(10)  # 100 Hz
         self._gil_yield_timer.timeout.connect(lambda: time.sleep(0))
         self._gil_yield_timer.start()
+
+    def _start_mqtt_loop(self) -> None:
+        """Attach MqttLoopManager once paho's socket is available.
+
+        paho completes the TCP handshake on its own thread after
+        AgentLauncher.start() returns, so the socket may be None briefly.
+        Also, loop_stop() inside MqttLoopManager can transiently clear the
+        socket. Retry every 100 ms until construction succeeds.
+        """
+        client = _launcher.transport.client
+        if client.socket() is None:
+            QTimer.singleShot(100, self._start_mqtt_loop)
+            return
+        try:
+            self._mqtt_loop = MqttLoopManager(client, parent=self)
+        except RuntimeError:
+            QTimer.singleShot(100, self._start_mqtt_loop)
 
     def _on_connection_error(self, message: str) -> None:
         self._dot.setStyleSheet("color: #ef4444; font-size: 20px;")
