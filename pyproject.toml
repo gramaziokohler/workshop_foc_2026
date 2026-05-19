@@ -4,25 +4,7 @@ version = "0.1.0"
 description = "Workshop: Future of Construction 26"
 readme = "README.md"
 requires-python = "~=3.14.0"
-dependencies = [
-    "compas==2.15.1",
-    "compas_timber==2.1.1-rc1",
-    "timber_design==0.2.0",
-    "pythonnet",
-    "black>=26.3.1",
-    "cwapi3d>=32.443.5",
-    "compas-cadwork>=0.10.0",
-    "cwmath>=0.0.9",
-    # Cadwork 2026 embeds Qt 6.8.3 and loads its own Qt6*.dll into the
-    # process; the embedded-Python PyQt6 binding must be built against the
-    # same Qt minor or QtCore fails to load ("specified procedure could not
-    # be found"). Qt is only backward binary-compatible within Qt6, so pin
-    # to the 6.8 line — do NOT bump to match the latest Qt.
-    "pyqt6==6.8.1",
-    "pyqt6-qt6==6.8.2",
-    "antikythera-sdk==0.3.0",
-    "easyhops @ git+https://github.com/MAS-dfab/easyhops.git@main"
-]
+dynamic = ["dependencies"]
 
 [dependency-groups]
 dev = [
@@ -30,6 +12,16 @@ dev = [
     "ruff",
     "rhino-stubs",
 ]
+
+[build-system]
+requires = ["hatchling", "hatch-requirements-txt"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.build.targets.wheel]
+packages = []
 
 [tool.uv]
 package = false

@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "id": "timber-fabrication-pipeline",
+  "name": "FoC - d2fab",
+  "description": "Linear design → planning → cnc pipeline across three agents.",
+  "tasks": [
+    {
+      "id": "start",
+      "type": "system.start",
+      "outputs": [
+        {
+          "name": "start_time"
+        }
+      ]
+    },
+    {
+      "id": "design",
+      "type": "foc.design",
+      "description": "Designer builds and approves a TimberModel in design.gh",
+      "outputs": [
+        {
+          "name": "timber_model",
+          "set_to": "timber_model"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "start"
+        }
+      ]
+    },
+    {
+      "id": "planning",
+      "type": "foc.planning",
+      "description": "Timber engineer, using cadwork",
+      "inputs": [
+        {
+          "name": "timber_model"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "timber_model"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "design"
+        }
+      ]
+    },
+    {
+      "id": "fabrication",
+      "type": "foc.fabrication",
+      "description": "Fabrication post-processing of BTLx -> HOPS",
+      "inputs": [
+        {
+          "name": "timber_model"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "timber_model"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "planning"
+        }
+      ]
+    },
+    {
+      "id": "cnc-milling",
+      "type": "foc.cnc",
+      "description": "Fabrication task using the CNC",
+      "inputs": [
+        {
+          "name": "hops_file"
+        },
+        {
+          "name": "filename"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "done"
+        },
+        {
+          "name": "local_path"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "fabrication"
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "type": "system.end",
+      "outputs": [
+        {
+          "name": "end_time"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "cnc-milling"
+        }
+      ]
+    }
+  ]
+}
