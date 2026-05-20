@@ -99,13 +99,15 @@ class AgentUIBridge(QObject):
 
     Workflow phases
     ---------------
-    1. ``import_started``       - ct_to_cw import running
-    2. ``ready_for_interaction`` - model is in Cadwork, user can work freely
-    3. ``export_started``       - cw_to_ct export running after user confirms
-    4. ``task_completed``       - back to idle / online
+    1. ``import_started``       - ct_to_cw import running (first entry)
+    2. ``lock_started``         - locking fabricated beams (subsequent entries)
+    3. ``ready_for_interaction`` - model is in Cadwork, user can select next batch
+    4. ``export_started``       - cw_to_ct export running after user confirms
+    5. ``task_completed``       - back to idle / online
     """
 
     import_started = pyqtSignal(str, str)  # task_id, task_type
+    lock_started = pyqtSignal()
     ready_for_interaction = pyqtSignal()
     export_started = pyqtSignal()
     task_completed = pyqtSignal()
@@ -121,8 +123,12 @@ class AgentUIBridge(QObject):
     def notify_import_started(self, task_id: str, task_type: str) -> None:
         self.import_started.emit(task_id, task_type)
 
+    def notify_lock_started(self) -> None:
+        """Called before locking fabricated beams in cadwork."""
+        self.lock_started.emit()
+
     def notify_ready_for_interaction(self) -> None:
-        """Called after ct_to_cw import finishes - unlocks the UI."""
+        """Called when cadwork is ready for the user to select the next batch."""
         self.ready_for_interaction.emit()
 
     def wait_for_user_confirmation(self) -> None:
@@ -266,6 +272,7 @@ class AgentWindow(QDockWidget):
         bridge.connected.connect(self._on_connected)
         bridge.connection_error.connect(self._on_connection_error)
         bridge.import_started.connect(self._on_import_started)
+        bridge.lock_started.connect(self._on_lock_started)
         bridge.ready_for_interaction.connect(self._on_ready_for_interaction)
         bridge.export_started.connect(self._on_export_started)
         bridge.task_completed.connect(self._on_task_completed)
@@ -461,6 +468,11 @@ class AgentWindow(QDockWidget):
         self._task_lbl.setText(f"<b>Type:</b> {task_type}<br><b>ID:</b> {task_id}")
         self._finish_btn.setEnabled(False)
 
+    def _on_lock_started(self) -> None:
+        self._dot.setStyleSheet("color: #f59e0b; font-size: 20px;")
+        self._status_lbl.setText("Locking fabricated beams…")
+        self._finish_btn.setEnabled(False)
+
     def _on_ready_for_interaction(self) -> None:
         self._status_lbl.setText("Interact in Cadwork")
         self._finish_btn.setEnabled(True)
@@ -487,8 +499,8 @@ class AgentWindow(QDockWidget):
 
 @agent(type="foc")
 class CadworkAgent(Agent):
-    """Agent that imports a COMPAS Timber model into Cadwork, waits for the
-    user to finish manual work, then exports the modified model back to CT."""
+    """Agent that manages a COMPAS Timber model in Cadwork across the full
+    fabrication pipeline: initial import and repeated planning/locking cycles."""
 
     def __init__(self):
         super().__init__()
@@ -502,30 +514,28 @@ class CadworkAgent(Agent):
     def _bridge(self) -> "AgentUIBridge | None":
         return _UI_BRIDGE
 
-    @tool(name="planning")
-    def process_model(self, task: Task) -> Dict[str, Any]:
-        """Import a COMPAS Timber model into Cadwork, let the user work on it,
-        then export the modified model back to COMPAS Timber format.
+    @tool(name="import")
+    def import_model(self, task: Task) -> Dict[str, Any]:
+        """Import a COMPAS Timber model into Cadwork for the first time.
 
-        Inputs / params
-        ---------------
+        Creates all cadwork elements from the COMPAS Timber model, then waits
+        for the user to select the first batch of beams for fabrication before
+        exporting the modified model back to COMPAS Timber format.
+
+        Inputs
+        ------
         timber_model : str
             Path to the input COMPAS Timber JSON file.
-        output_model : str, optional
-            Path for the exported JSON.  Defaults to
-            ``<input_stem>_modified<ext>``.
         """
         timber_model = task.get_input_value("timber_model")
         if not timber_model:
-            for input in task.inputs:
-                print(f"Input '{input.name}' value: {input.value}")
+            for inp in task.inputs:
+                print(f"Input '{inp.name}' value: {inp.value}")
             raise ValueError("Missing required 'timber_model' input or param.")
 
         bridge = self._bridge
 
         # ── Phase 1: import into Cadwork ─────────────────────────────────────
-        # Cadwork Python API modules are only available inside the Cadwork
-        # runtime, so we import them lazily here rather than at module level.
         if bridge:
             bridge.notify_import_started(task.id, task.type)
 
@@ -534,16 +544,15 @@ class CadworkAgent(Agent):
         self.logger.info(f"Importing model into Cadwork: {timber_model}")
         controller = ImportController()
         controller.load_model(timber_model)
-        self.logger.info("Model imported. Waiting for user to finish in Cadwork.")
+        self.logger.info("Model imported. Waiting for user to select first batch.")
 
         # ── Phase 2: hand control to the user ────────────────────────────────
         if bridge:
             bridge.notify_ready_for_interaction()
             bridge.wait_for_user_confirmation()
-        # (headless / no-UI fallback: skip waiting and export immediately)
 
         # ── Phase 3: export modified model back to CT ─────────────────────────
-        self.logger.info("Exporting modified model...")
+        self.logger.info("Exporting model after first batch selection...")
         if bridge:
             bridge.notify_export_started()
 
@@ -554,11 +563,83 @@ class CadworkAgent(Agent):
         output_model = exporter.export_model()
         self.logger.info("Export complete.")
 
-        # ── Phase 4: signal task done to UI ───────────────────────────────────
         if bridge:
             bridge.task_completed.emit()
 
         return {"timber_model": output_model}
+
+    @tool(name="planning")
+    def plan_next_batch(self, task: Task) -> Dict[str, Any]:
+        """Post-fabrication cadwork planning step.
+
+        Receives a COMPAS Timber model where some beams are marked as
+        fabricated (``beam.attributes['fabricated'] == True``).  Locks those
+        beams in cadwork, then waits for the user to select the next batch
+        before exporting the updated model.
+
+        Inputs
+        ------
+        timber_model : compas_timber.assembly.TimberModel
+            The timber model returned by the previous fabrication cycle.
+
+        Outputs
+        -------
+        timber_model : compas_timber.assembly.TimberModel
+            The updated timber model after the user has marked the next batch.
+        all_fabricated : bool
+            True when every beam in the model is marked as fabricated.
+        """
+        timber_model = task.get_input_value("timber_model")
+        if not timber_model:
+            for inp in task.inputs:
+                print(f"Input '{inp.name}' value: {inp.value}")
+            raise ValueError("Missing required 'timber_model' input or param.")
+
+        bridge = self._bridge
+
+        # ── Phase 1: lock fabricated beams ────────────────────────────────────
+        if bridge:
+            bridge.notify_lock_started()
+
+        from compas_cadwork.utilities import lock_elements
+        from cw_to_ct import ExportController
+
+        self.logger.info("Rebuilding element map to identify fabricated beams...")
+        exporter = ExportController()
+        exporter.load_model(timber_model)
+
+        def _cadwork_id(beam):
+            cadwork = beam.attributes.get("cadwork")
+            return cadwork.get("id") if isinstance(cadwork, dict) else None
+
+        fabricated_ids = [_cadwork_id(beam) for beam in timber_model.beams if beam.attributes.get("fabricated") and _cadwork_id(beam) is not None]
+
+        if fabricated_ids:
+            self.logger.info(f"Locking {len(fabricated_ids)} fabricated beam(s) in cadwork.")
+            lock_elements(fabricated_ids)
+        else:
+            self.logger.info("No fabricated beams to lock.")
+
+        # ── Phase 2: hand control to the user ────────────────────────────────
+        if bridge:
+            bridge.notify_ready_for_interaction()
+            bridge.wait_for_user_confirmation()
+
+        # ── Phase 3: export modified model back to CT ─────────────────────────
+        self.logger.info("Exporting model after next batch selection...")
+        if bridge:
+            bridge.notify_export_started()
+
+        output_model = exporter.export_model()
+        self.logger.info("Export complete.")
+
+        all_fabricated = all(b.attributes.get("fabricated") for b in output_model.beams)
+        self.logger.info(f"All beams fabricated: {all_fabricated}")
+
+        if bridge:
+            bridge.task_completed.emit()
+
+        return {"timber_model": output_model, "all_fabricated": all_fabricated}
 
 
 # ---------------------------------------------------------------------------
