@@ -300,6 +300,12 @@ class FabWindow(QMainWindow):
 
     def _on_model_received(self, beams: list) -> None:
         self._beams_to_fabricate = beams
+        current_guids = {b.guid for b in beams}
+
+        # Drop hops entries for beams that are no longer pending (already fabricated).
+        self._hops_filepaths = {g: p for g, p in self._hops_filepaths.items() if g in current_guids}
+        self._hops_guids = [g for g in getattr(self, "_hops_guids", []) if g in current_guids]
+
         beam_count = len(beams)
         self._dot.setStyleSheet("color: #f59e0b; font-size: 20px;")
         self._status_lbl.setText("Working — interact with the model")
@@ -312,6 +318,13 @@ class FabWindow(QMainWindow):
             label = attrs.get("name") or attrs.get("element_name") or f"Beam {i + 1}"
             self._beams_list.addItem(label)
         self._beams_section.show()
+
+        # Restore the hops section if files were already generated for these beams.
+        if self._hops_filepaths:
+            self._hops_list.clear()
+            for filepath in self._hops_filepaths.values():
+                self._hops_list.addItem(os.path.basename(filepath))
+            self._hops_section.show()
 
     def _on_task_completed(self) -> None:
         self._dot.setStyleSheet("color: #22c55e; font-size: 20px;")
@@ -327,7 +340,11 @@ class FabWindow(QMainWindow):
 
     def _on_generate_clicked(self):
         beams = getattr(self, "_beams_to_fabricate", [])
-        self._hops_filepaths = self.easy_hops.generate_hops(beams)
+        # Only generate for beams that don't already have a hops file.
+        new_beams = [b for b in beams if b.guid not in self._hops_filepaths]
+        if new_beams:
+            new_hops = self.easy_hops.generate_hops(new_beams)
+            self._hops_filepaths.update(new_hops)
         # Keep an ordered list of guids so list row index maps back to a beam
         self._hops_guids = list(self._hops_filepaths.keys())
         self._hops_list.clear()
