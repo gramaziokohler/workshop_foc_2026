@@ -3,6 +3,7 @@
 import base64
 import logging
 import os
+import subprocess
 import sys
 import threading
 from typing import Any
@@ -113,6 +114,8 @@ QFrame {
 # ---------------------------------------------------------------------------
 # Main window
 # ---------------------------------------------------------------------------
+
+PATH_TO_HOPS_EXEC = r"C:\Program Files\Hops8\System\Hops.exe"
 
 
 class FabWindow(QMainWindow):
@@ -241,6 +244,7 @@ class FabWindow(QMainWindow):
         hops_btn_row = QHBoxLayout()
         self._sim_btn = QPushButton("Simulate")
         self._sim_btn.setStyleSheet(_BTN_STYLE)
+        self._sim_btn.clicked.connect(self._on_simulate_clicked)
         self._exec_btn = QPushButton("Execute")
         self._exec_btn.setStyleSheet(_BTN_STYLE)
         self._exec_btn.clicked.connect(self._on_execute_clicked)
@@ -372,10 +376,13 @@ class FabWindow(QMainWindow):
 
         self.bridge.execute_selected(hops_file, filename, guid)
 
-    def _on_start_sim(self):
-        selected_beam = ...  # geete from UI
-        hops_filepath = self._hops_filepaths[selected_beam.guid]
-        self.easy_hops.start_sim(hops_filepath, selected_beam)
+    def _on_simulate_clicked(self):
+        row = self._hops_list.currentRow()
+        if row < 0:
+            return  # nothing selected
+        guid = self._hops_guids[row]
+        filepath = self._hops_filepaths[guid]
+        subprocess.Popen([PATH_TO_HOPS_EXEC, filepath])
 
     def _on_start_milling(self):
         selected_beam = ...  # geete from UI
