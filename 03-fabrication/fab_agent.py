@@ -433,8 +433,9 @@ class FabricationAgent(Agent):
             raise ValueError("Missing required 'timber_model' input.")
 
         # Populate the pending queue on the first call of a new batch.
+        model.process_joinery()
+
         if not self._pending_guids:
-            model.process_joinery()
             for beam in model.beams:
                 cadwork_attrs = beam.attributes.get("cadwork", {})
                 to_fabricate = cadwork_attrs.get("user_attributes", {}).get("50", {}).get("value")
