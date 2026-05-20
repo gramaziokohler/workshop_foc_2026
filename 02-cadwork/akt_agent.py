@@ -518,9 +518,8 @@ class CadworkAgent(Agent):
     def import_model(self, task: Task) -> Dict[str, Any]:
         """Import a COMPAS Timber model into Cadwork for the first time.
 
-        Creates all cadwork elements from the COMPAS Timber model, then waits
-        for the user to select the first batch of beams for fabrication before
-        exporting the modified model back to COMPAS Timber format.
+        Creates all cadwork elements from the COMPAS Timber model and
+        immediately outputs the model path once the import is complete.
 
         Inputs
         ------
@@ -535,7 +534,6 @@ class CadworkAgent(Agent):
 
         bridge = self._bridge
 
-        # ── Phase 1: import into Cadwork ─────────────────────────────────────
         if bridge:
             bridge.notify_import_started(task.id, task.type)
 
@@ -544,29 +542,12 @@ class CadworkAgent(Agent):
         self.logger.info(f"Importing model into Cadwork: {timber_model}")
         controller = ImportController()
         controller.load_model(timber_model)
-        self.logger.info("Model imported. Waiting for user to select first batch.")
-
-        # ── Phase 2: hand control to the user ────────────────────────────────
-        if bridge:
-            bridge.notify_ready_for_interaction()
-            bridge.wait_for_user_confirmation()
-
-        # ── Phase 3: export modified model back to CT ─────────────────────────
-        self.logger.info("Exporting model after first batch selection...")
-        if bridge:
-            bridge.notify_export_started()
-
-        from cw_to_ct import ExportController
-
-        exporter = ExportController()
-        exporter.load_model(timber_model)
-        output_model = exporter.export_model()
-        self.logger.info("Export complete.")
+        self.logger.info("Model imported.")
 
         if bridge:
             bridge.task_completed.emit()
 
-        return {"timber_model": output_model}
+        return {"timber_model": timber_model}
 
     @tool(name="planning")
     def plan_next_batch(self, task: Task) -> Dict[str, Any]:
