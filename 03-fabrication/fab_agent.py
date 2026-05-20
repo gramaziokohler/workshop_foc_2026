@@ -413,7 +413,7 @@ class FabricationAgent(Agent):
             model.process_joinery()
             for beam in model.beams:
                 cadwork_attrs = beam.attributes.get("cadwork", {})
-                to_fabricate = cadwork_attrs.get("user_attributes", {}).get("1", {}).get("value")
+                to_fabricate = cadwork_attrs.get("user_attributes", {}).get("50", {}).get("value")
                 if to_fabricate:
                     self._pending_guids.add(str(beam.guid))
             self.logger.info("%d beams queued for fabrication.", len(self._pending_guids))
