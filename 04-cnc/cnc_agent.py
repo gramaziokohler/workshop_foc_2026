@@ -295,8 +295,8 @@ class CncAgent(Agent):
     def _bridge(self) -> "AgentUIBridge | None":
         return _UI_BRIDGE
 
-    @tool(name="mill")
-    def mill(self, task: Task) -> Dict[str, Any]:
+    @tool(name="cnc")
+    def cnc(self, task: Task) -> Dict[str, Any]:
         """Receive a base64-encoded HOP file, write it to disk, load it on
         the CNC, then wait for the operator to confirm the beam is finished.
 
