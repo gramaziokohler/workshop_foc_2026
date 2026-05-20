@@ -7,6 +7,7 @@
 * **Date:** May 20, 2026
 * **Instructors:** Andrea Settimi, Panayiotis Papacharalambous, Gonzalo Casas, Chen Kasirer
 * **Keywords:** AI CAD, Timber design, CNC fabrication, Timber engineering
+* [**🛝 Slides**](https://docs.google.com/presentation/d/1kZw4eNeuUFnRAAUAfuPwW1dH6VCnFoOsh7jdpSB33k8/)
 
 ## Overview
 
