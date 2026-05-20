@@ -6,6 +6,7 @@ BackgroundWorker thread.  Each pipeline component imports from here instead
 of duplicating the boilerplate.
 """
 
+import ssl
 import threading
 import logging
 
@@ -16,12 +17,47 @@ import logging
 #     filemode="a",
 # )
 
+import antikythera_agents.launcher as _akt_launcher
 from antikythera_agents.launcher import AgentLauncher
 
 LOG = logging.getLogger("GrasshopperAgent")
 
 
 class GrasshopperAgentLauncher(AgentLauncher):
+    def __init__(self, *args, **kwargs):
+        """Wrap super().__init__ with a patched SSL context so that Rhino's
+        bundled Python (which lacks a proper CA store) can connect over TLS.
+        Uses certifi's CA bundle when available; falls back to disabling
+        certificate verification with a warning.
+        """
+        from compas_eve.mqtt import MqttTransport
+
+        original_fn = _akt_launcher._get_eve_transport
+
+        def _tls_patched_transport(host, port, codec, transport, tls):
+            if not tls:
+                return original_fn(host, port, codec, transport, tls)
+            try:
+                import certifi
+
+                tls_options = {"ca_certs": certifi.where()}
+            except ImportError:
+                LOG.warning("certifi not found; disabling TLS certificate verification")
+                tls_options = {"cert_reqs": ssl.CERT_NONE}
+            return MqttTransport(
+                host=host,
+                port=port,
+                codec=codec,
+                transport=transport,
+                tls_options=tls_options,
+            )
+
+        _akt_launcher._get_eve_transport = _tls_patched_transport
+        try:
+            super().__init__(*args, **kwargs)
+        finally:
+            _akt_launcher._get_eve_transport = original_fn
+
     def _initialize_agents(self):
         pass
 
@@ -111,7 +147,7 @@ def run_agent(
     worker.task_result = None
 
     gh_agent = GrasshopperAgent(task_type, worker, logger_name=logger_name)
-    launcher = GrasshopperAgentLauncher(broker_host, broker_port)
+    launcher = GrasshopperAgentLauncher(broker_host, broker_port, tls=True, mqtt_transport="websockets")
     launcher.agents[task_type.split(".", 1)[0]] = gh_agent
     worker.launcher = launcher
     launcher.start()
