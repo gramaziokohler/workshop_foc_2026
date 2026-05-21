@@ -24,7 +24,7 @@ class EasyHops:
 
     def _element_to_job(self, element) -> HOPSJob:
         """Build a HOPSJob for *element* with explicit control over dispatch."""
-        job = HOPSJob.from_element(element)
+        job = HOPSJob.from_element(element, scale_factor=1000.0)  # scale from m to mm
         rsi = job.ref_side_index
         opp_rsi = (rsi + 2) % 4
 

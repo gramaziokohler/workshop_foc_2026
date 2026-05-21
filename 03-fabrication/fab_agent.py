@@ -3,6 +3,7 @@
 import base64
 import logging
 import os
+import subprocess
 import sys
 import threading
 from typing import Any
@@ -67,9 +68,9 @@ class AgentUIBridge(QObject):
         self._confirm_event.clear()
         self._confirm_event.wait()
 
-    def execute_selected(self, hops_file: bytes, filename: str) -> None:
+    def execute_selected(self, hops_file: bytes, filename: str, beam_guid: str) -> None:
         """Called from the UI thread when the user clicks 'Execute'."""
-        self._execute_result = (hops_file, filename)
+        self._execute_result = (hops_file, filename, beam_guid)
         self._confirm_event.set()
         self.task_completed.emit()
 
@@ -113,6 +114,8 @@ QFrame {
 # ---------------------------------------------------------------------------
 # Main window
 # ---------------------------------------------------------------------------
+
+PATH_TO_HOPS_EXEC = r"C:\Program Files\Hops8\System\Hops.exe"
 
 
 class FabWindow(QMainWindow):
@@ -241,6 +244,7 @@ class FabWindow(QMainWindow):
         hops_btn_row = QHBoxLayout()
         self._sim_btn = QPushButton("Simulate")
         self._sim_btn.setStyleSheet(_BTN_STYLE)
+        self._sim_btn.clicked.connect(self._on_simulate_clicked)
         self._exec_btn = QPushButton("Execute")
         self._exec_btn.setStyleSheet(_BTN_STYLE)
         self._exec_btn.clicked.connect(self._on_execute_clicked)
@@ -300,6 +304,12 @@ class FabWindow(QMainWindow):
 
     def _on_model_received(self, beams: list) -> None:
         self._beams_to_fabricate = beams
+        current_guids = {b.guid for b in beams}
+
+        # Drop hops entries for beams that are no longer pending (already fabricated).
+        self._hops_filepaths = {g: p for g, p in self._hops_filepaths.items() if g in current_guids}
+        self._hops_guids = [g for g in getattr(self, "_hops_guids", []) if g in current_guids]
+
         beam_count = len(beams)
         self._dot.setStyleSheet("color: #f59e0b; font-size: 20px;")
         self._status_lbl.setText("Working — interact with the model")
@@ -312,6 +322,13 @@ class FabWindow(QMainWindow):
             label = attrs.get("name") or attrs.get("element_name") or f"Beam {i + 1}"
             self._beams_list.addItem(label)
         self._beams_section.show()
+
+        # Restore the hops section if files were already generated for these beams.
+        if self._hops_filepaths:
+            self._hops_list.clear()
+            for filepath in self._hops_filepaths.values():
+                self._hops_list.addItem(os.path.basename(filepath))
+            self._hops_section.show()
 
     def _on_task_completed(self) -> None:
         self._dot.setStyleSheet("color: #22c55e; font-size: 20px;")
@@ -327,7 +344,11 @@ class FabWindow(QMainWindow):
 
     def _on_generate_clicked(self):
         beams = getattr(self, "_beams_to_fabricate", [])
-        self._hops_filepaths = self.easy_hops.generate_hops(beams)
+        # Only generate for beams that don't already have a hops file.
+        new_beams = [b for b in beams if b.guid not in self._hops_filepaths]
+        if new_beams:
+            new_hops = self.easy_hops.generate_hops(new_beams)
+            self._hops_filepaths.update(new_hops)
         # Keep an ordered list of guids so list row index maps back to a beam
         self._hops_guids = list(self._hops_filepaths.keys())
         self._hops_list.clear()
@@ -353,12 +374,15 @@ class FabWindow(QMainWindow):
         with open(filepath, "rb") as fh:
             hops_file = base64.b64encode(fh.read()).decode("ascii")
 
-        self.bridge.execute_selected(hops_file, filename)
+        self.bridge.execute_selected(hops_file, filename, guid)
 
-    def _on_start_sim(self):
-        selected_beam = ...  # geete from UI
-        hops_filepath = self._hops_filepaths[selected_beam.guid]
-        self.easy_hops.start_sim(hops_filepath, selected_beam)
+    def _on_simulate_clicked(self):
+        row = self._hops_list.currentRow()
+        if row < 0:
+            return  # nothing selected
+        guid = self._hops_guids[row]
+        filepath = self._hops_filepaths[guid]
+        subprocess.Popen([PATH_TO_HOPS_EXEC, filepath])
 
     def _on_start_milling(self):
         selected_beam = ...  # geete from UI
@@ -379,6 +403,7 @@ class FabricationAgent(Agent):
 
     def __init__(self):
         super().__init__()
+        self._pending_guids: set = set()
         self.logger.info("FabricationAgent initialized.")
 
     def dispose(self):
@@ -391,41 +416,69 @@ class FabricationAgent(Agent):
 
     @tool(name="fabrication")
     def process_model(self, task: Task) -> Dict[str, Any]:
-        """Receive a COMPAS Timber model object, display it, and wait for
-        the user to click 'Finished' before completing the task.
+        """Handle both 'fabrication' and 'fabrication_close' tasks (both have type foc.fabrication).
 
-        Inputs
-        ------
-        timber_model : TimberModel
-            The COMPAS Timber model object passed directly by the orchestrator.
+        fabrication: Receive a COMPAS Timber model, show the next pending beam,
+        wait for the user to generate and execute its HOP file, then return the
+        HOP data together with has_hops to drive the hops-loop.
+
+        fabrication_close: Mark all to-fabricate beams as done, reset the queue,
+        and return the updated model plus all_fabricated to drive the fab-loop.
         """
+        if task.id == "fabrication_close":
+            return self._close_batch(task)
+
         model = task.get_input_value("timber_model")
         if model is None:
             raise ValueError("Missing required 'timber_model' input.")
 
+        # Populate the pending queue on the first call of a new batch.
         model.process_joinery()
 
-        beams = list(model.beams)
-        beam_count = len(beams)
-        self.logger.info("Timber model received — %d beam(s).", beam_count)
+        if not self._pending_guids:
+            for beam in model.beams:
+                cadwork_attrs = beam.attributes.get("cadwork", {})
+                to_fabricate = cadwork_attrs.get("user_attributes", {}).get("50", {}).get("value")
+                if to_fabricate:
+                    self._pending_guids.add(str(beam.guid))
+            self.logger.info("%d beams queued for fabrication.", len(self._pending_guids))
 
-        beams_to_fabricate = []
-        for beam in model.beams:
-            print(beam.attributes["cadwork"])
-            cadwork_attrs = beam.attributes["cadwork"]
-            to_fabricate = cadwork_attrs.get("user_attributes", {}).get("1", {}).get("value")
-            if to_fabricate:
-                beams_to_fabricate.append(beam)
+        if not self._pending_guids:
+            return {"has_hops": False}
+
+        pending_beams = [b for b in model.beams if str(b.guid) in self._pending_guids]
 
         bridge = self._bridge
         if bridge:
-            bridge.model_received.emit(beams_to_fabricate)
-            bridge.wait_for_user_confirmation()  # blocks until the user clicks Execute
+            bridge.model_received.emit(pending_beams)
+            bridge.wait_for_user_confirmation()
 
         if bridge and bridge._execute_result:
-            hops_file, filename = bridge._execute_result
-            return {"hops_file": hops_file, "filename": filename}
-        return {}
+            hops_file, filename, executed_guid = bridge._execute_result
+            self._pending_guids.discard(str(executed_guid))
+            has_hops = bool(self._pending_guids)
+            return {"hops_file": hops_file, "filename": filename, "has_hops": has_hops}
+
+        # User clicked 'Finished' without executing — exit the loop.
+        return {"has_hops": False}
+
+    def _close_batch(self, task: Task) -> Dict[str, Any]:
+        """Mark the current batch as fabricated and signal whether all beams are done."""
+        model = task.get_input_value("timber_model")
+        if model is None:
+            raise ValueError("Missing required 'timber_model' input.")
+
+        for beam in model.beams:
+            cadwork_attrs = beam.attributes.get("cadwork", {})
+            to_fabricate = cadwork_attrs.get("user_attributes", {}).get("1", {}).get("value")
+            if to_fabricate:
+                beam.attributes["fabricated"] = True
+
+        self._pending_guids.clear()
+
+        all_fabricated = all(b.attributes.get("fabricated") for b in model.beams)
+        self.logger.info("Batch closed. All fabricated: %s", all_fabricated)
+        return {"timber_model": model, "all_fabricated": all_fabricated}
 
 
 # ---------------------------------------------------------------------------

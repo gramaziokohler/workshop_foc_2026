@@ -2,7 +2,7 @@
   "version": "1.0",
   "id": "timber-fabrication-pipeline",
   "name": "FoC - d2fab",
-  "description": "Linear design → planning → cnc pipeline across three agents.",
+  "description": "Linear design → import → [planning → [fabrication → cnc loop] → fabrication_close] pipeline across three agents.",
   "tasks": [
     {
       "id": "start",
@@ -30,17 +30,19 @@
       ]
     },
     {
-      "id": "planning",
-      "type": "foc.planning",
-      "description": "Timber engineer, using cadwork",
+      "id": "import",
+      "type": "foc.import",
+      "description": "First-time import: creates cadwork elements and lets the user select the first fabrication batch.",
       "inputs": [
         {
-          "name": "timber_model"
+          "name": "timber_model",
+          "get_from": "timber_model"
         }
       ],
       "outputs": [
         {
-          "name": "timber_model"
+          "name": "timber_model",
+          "set_to": "timber_model"
         }
       ],
       "depends_on": [
@@ -50,17 +52,61 @@
       ]
     },
     {
-      "id": "fabrication",
-      "type": "foc.fabrication",
-      "description": "Fabrication post-processing of BTLx -> HOPS",
+      "id": "planning",
+      "type": "foc.planning",
+      "description": "Lock fabricated beams in cadwork and let the user select the next batch.",
+      "scope_start": {
+        "name": "fab-loop",
+        "while_policy": {
+          "condition": "all_fabricated == False"
+        }
+      },
       "inputs": [
         {
-          "name": "timber_model"
+          "name": "timber_model",
+          "get_from": "timber_model"
         }
       ],
       "outputs": [
         {
-          "name": "timber_model"
+          "name": "timber_model",
+          "set_to": "timber_model"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "import"
+        }
+      ]
+    },
+    {
+      "id": "fabrication",
+      "type": "foc.fabrication",
+      "description": "Fabrication post-processing: outputs one HOPS file per iteration until all beams in the batch are processed.",
+      "scope_start": {
+        "name": "hops-loop",
+        "while_policy": {
+          "condition": "has_hops == True"
+        }
+      },
+      "inputs": [
+        {
+          "name": "timber_model",
+          "get_from": "timber_model"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hops_file",
+          "set_to": "hops_file"
+        },
+        {
+          "name": "filename",
+          "set_to": "filename"
+        },
+        {
+          "name": "has_hops",
+          "set_to": "has_hops"
         }
       ],
       "depends_on": [
@@ -72,13 +118,16 @@
     {
       "id": "cnc-milling",
       "type": "foc.cnc",
-      "description": "Fabrication task using the CNC",
+      "description": "Fabrication task using the CNC. Closes the hops-loop.",
+      "scope_end": "fabrication",
       "inputs": [
         {
-          "name": "hops_file"
+          "name": "hops_file",
+          "get_from": "hops_file"
         },
         {
-          "name": "filename"
+          "name": "filename",
+          "get_from": "filename"
         }
       ],
       "outputs": [
@@ -96,6 +145,33 @@
       ]
     },
     {
+      "id": "fabrication_close",
+      "type": "foc.fabrication",
+      "description": "Marks the current batch as fabricated in the model and signals whether all beams are done. Closes the fab-loop.",
+      "scope_end": "planning",
+      "inputs": [
+        {
+          "name": "timber_model",
+          "get_from": "timber_model"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "timber_model",
+          "set_to": "timber_model"
+        },
+        {
+          "name": "all_fabricated",
+          "set_to": "all_fabricated"
+        }
+      ],
+      "depends_on": [
+        {
+          "id": "cnc-milling"
+        }
+      ]
+    },
+    {
       "id": "end",
       "type": "system.end",
       "outputs": [
@@ -105,7 +181,7 @@
       ],
       "depends_on": [
         {
-          "id": "cnc-milling"
+          "id": "fabrication_close"
         }
       ]
     }
